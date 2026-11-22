@@ -1,0 +1,1710 @@
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Jeu de soirée entre amis : qui est le plus susceptible de… et qui a déjà…">
+<title>Qui de nous ?</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,500;12..96,700;12..96,800&family=DM+Sans:wght@400;500;700&display=swap">
+<style>
+/* Layout : une seule colonne façon jeu de cartes, une "carte" plein écran par question. Univers nocturne assumé (thème unique). */
+:root{
+  --night:#1a1027;      /* fond */
+  --night-2:#251838;    /* surfaces */
+  --line:#3a2a52;
+  --ink:#f6eefc;        /* texte */
+  --muted:#b6a5cc;
+  --sus:#ff6b4a;        /* mode "plus susceptible" : corail */
+  --sus-ink:#2a0d05;
+  --deja:#ffc93c;       /* mode "qui a déjà" : jaune néon chaud */
+  --deja-ink:#2b1f00;
+  --accent:var(--sus);
+  --accent-ink:var(--sus-ink);
+  --display:"Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
+  --body:"DM Sans", system-ui, -apple-system, "Segoe UI", sans-serif;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html,body{min-height:100%;margin:0}
+[hidden]{display:none!important}
+body{
+  background:var(--night);
+  background-image:radial-gradient(1200px 600px at 110% -10%, #3b1d4a 0%, transparent 60%),radial-gradient(900px 500px at -20% 110%, #2a1640 0%, transparent 60%);
+  background-attachment:fixed;
+  color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.5;
+  padding-left:max(16px, env(safe-area-inset-left, 0px));
+  padding-right:max(16px, env(safe-area-inset-right, 0px));
+  padding-block:20px 40px;
+}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:22px}
+button{font:inherit;color:inherit;cursor:pointer;border:0;background:none}
+button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:3px solid var(--deja);outline-offset:2px}
+h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.02}
+.label{font-size:12px;letter-spacing:.12em;text-transform:uppercase;color:var(--muted);font-weight:700}
+
+/* ---------- Accueil ---------- */
+.brand{display:flex;flex-direction:column;gap:6px;padding-top:8px}
+.brand h1{font-size:clamp(46px,13vw,76px);font-weight:800;letter-spacing:-.03em}
+.brand h1 span{color:var(--sus)}
+.brand h1 em{font-style:normal;color:var(--deja)}
+.brand p{margin:0;color:var(--muted);max-width:40ch}
+
+.panel{background:var(--night-2);border:1px solid var(--line);border-radius:20px;padding:18px;display:flex;flex-direction:column;gap:14px}
+.addrow{display:flex;gap:8px}
+.addrow input{flex:1;min-width:0;background:var(--night);border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--ink);font:inherit}
+.btn{border-radius:12px;padding:12px 16px;font-weight:700;background:var(--ink);color:var(--night)}
+.btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+.btn:disabled{opacity:.4;cursor:not-allowed}
+.chips{display:flex;flex-wrap:wrap;gap:8px}
+.chip{display:inline-flex;align-items:center;gap:8px;padding:7px 8px 7px 12px;border-radius:999px;background:var(--night);border:1px solid var(--line);font-weight:500}
+.chip button{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;color:var(--muted);font-size:16px;line-height:1}
+.chip button:hover{background:var(--line);color:var(--ink)}
+.hint{font-size:14px;color:var(--muted);margin:0}
+
+.modes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+@media (max-width:440px){.modes{grid-template-columns:1fr}}
+.mode{border-radius:20px;padding:18px;text-align:left;display:flex;flex-direction:column;gap:10px;min-height:170px;justify-content:space-between;transition:transform .15s ease}
+.mode:hover:not(:disabled){transform:translateY(-3px) rotate(-.6deg)}
+.mode:disabled{opacity:.45;cursor:not-allowed}
+.mode.sus{background:var(--sus);color:var(--sus-ink)}
+.mode.deja{background:var(--deja);color:var(--deja-ink)}
+.mode h2{font-size:26px;font-weight:800;letter-spacing:-.02em}
+.mode p{margin:0;font-size:14px;font-weight:500;opacity:.85}
+.mode .tag{font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;opacity:.75}
+
+.opts{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center}
+.seg{display:inline-flex;background:var(--night);border:1px solid var(--line);border-radius:12px;padding:3px}
+.seg button{padding:7px 12px;border-radius:9px;font-weight:700;font-size:14px;color:var(--muted)}
+.seg button[aria-pressed="true"]{background:var(--ink);color:var(--night)}
+.opt{display:flex;flex-direction:column;gap:6px}
+
+details.custom summary{cursor:pointer;font-weight:700;list-style:none;display:flex;justify-content:space-between;align-items:center}
+details.custom summary::-webkit-details-marker{display:none}
+details.custom summary::after{content:"+";font-size:22px;color:var(--muted)}
+details.custom[open] summary::after{content:"–"}
+details.custom .inner{display:flex;flex-direction:column;gap:12px;margin-top:12px}
+textarea{width:100%;min-height:96px;background:var(--night);border:1px solid var(--line);border-radius:12px;padding:12px;color:var(--ink);font:inherit;font-size:14px;resize:vertical}
+
+/* ---------- Partie ---------- */
+.topbar{display:flex;justify-content:space-between;align-items:center;gap:12px}
+.progress{font-variant-numeric:tabular-nums;font-weight:700;color:var(--muted);font-size:14px}
+.bar{height:6px;background:var(--line);border-radius:99px;overflow:hidden}
+.bar i{display:block;height:100%;background:var(--accent);transition:width .3s ease}
+
+.card{
+  background:var(--accent);color:var(--accent-ink);border-radius:28px;padding:28px 24px 30px;
+  display:flex;flex-direction:column;gap:14px;min-height:230px;justify-content:center;
+  box-shadow:0 18px 50px -20px var(--accent);
+  animation:deal .35s cubic-bezier(.2,.9,.3,1.3);
+}
+@keyframes deal{from{transform:translateY(24px) rotate(2deg) scale(.96);opacity:0}to{transform:none;opacity:1}}
+.card .lead{font-family:var(--display);font-weight:700;font-size:18px;opacity:.75}
+.card .q{font-family:var(--display);font-weight:800;font-size:clamp(28px,7.5vw,40px);letter-spacing:-.02em;line-height:1.05;text-wrap:balance}
+.card .spicy{align-self:flex-start;font-size:11px;letter-spacing:.12em;text-transform:uppercase;font-weight:700;border:1.5px solid currentColor;border-radius:99px;padding:3px 9px}
+
+.instr{margin:0;color:var(--muted);font-size:15px;text-align:center}
+.players{display:grid;grid-template-columns:repeat(auto-fill,minmax(130px,1fr));gap:10px}
+.pbtn{background:var(--night-2);border:2px solid var(--line);border-radius:16px;padding:14px 12px;font-weight:700;font-size:17px;text-align:center;transition:transform .1s ease, background .15s, border-color .15s;overflow-wrap:anywhere}
+.pbtn:hover{border-color:var(--accent)}
+.pbtn:active{transform:scale(.96)}
+.pbtn[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.pbtn small{display:block;font-weight:500;font-size:12px;opacity:.7;font-variant-numeric:tabular-nums}
+
+.actions{display:flex;gap:10px;flex-wrap:wrap}
+.actions .btn{flex:1;min-width:140px}
+.btn.accent{background:var(--accent);color:var(--accent-ink)}
+
+.result{text-align:center;display:flex;flex-direction:column;gap:6px;align-items:center;padding:6px 0}
+.result .big{font-family:var(--display);font-weight:800;font-size:clamp(34px,9vw,52px);color:var(--accent);letter-spacing:-.02em;line-height:1.05;text-wrap:balance}
+
+.countdown{position:fixed;inset:0;display:grid;place-items:center;background:color-mix(in srgb, var(--night) 88%, transparent);z-index:20}
+.countdown span{font-family:var(--display);font-weight:800;font-size:min(48vw,260px);color:var(--accent);animation:pop .8s ease forwards}
+@keyframes pop{0%{transform:scale(.4);opacity:0}30%{transform:scale(1.05);opacity:1}100%{transform:scale(1);opacity:.9}}
+
+/* ---------- Fin ---------- */
+.podium{display:flex;flex-direction:column;gap:8px}
+.row{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:12px;background:var(--night-2);border:1px solid var(--line);border-radius:14px;padding:12px 14px}
+.row .rk{font-family:var(--display);font-weight:800;font-size:20px;color:var(--muted);font-variant-numeric:tabular-nums}
+.row .nm{font-weight:700;min-width:0;overflow-wrap:anywhere}
+.row .sc{font-variant-numeric:tabular-nums;font-weight:700}
+.row.first{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.row.first .rk{color:inherit}
+.crown{font-size:14px;font-weight:500;color:var(--muted);margin:0}
+
+/* ---------- En ligne ---------- */
+.field{width:100%;background:var(--night);border:1px solid var(--line);border-radius:12px;padding:12px 14px;color:var(--ink);font:inherit}
+.online-cta{display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;background:linear-gradient(120deg,var(--sus),var(--deja));color:var(--sus-ink);border-radius:20px;padding:18px}
+.online-cta > div{flex:1;min-width:200px;display:flex;flex-direction:column;gap:4px}
+.online-cta h2{font-size:24px;font-weight:800;letter-spacing:-.02em}
+.online-cta p{margin:0;font-size:14px;font-weight:500}
+.online-cta .btn{background:var(--night);color:var(--ink)}
+.code{font-family:var(--display);font-weight:800;font-size:clamp(56px,18vw,96px);letter-spacing:.12em;color:var(--accent);line-height:1;font-variant-numeric:tabular-nums}
+.err{color:var(--sus);font-weight:700;margin:0}
+.plist{display:flex;flex-direction:column;gap:8px}
+.prow{display:flex;justify-content:space-between;align-items:center;gap:10px;background:var(--night);border:1px solid var(--line);border-radius:12px;padding:10px 12px;font-weight:700;overflow-wrap:anywhere}
+.tagme{font-size:12px;color:var(--muted);font-weight:500;margin-left:6px}
+.btn.small{padding:6px 10px;font-size:13px}
+.btn.big{padding:16px;font-size:18px;width:100%}
+.yesno{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.yesno .pbtn{font-size:20px;padding:22px 12px}
+.tally{display:flex;flex-direction:column;gap:10px}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;font-weight:700}
+.trow .tb{grid-column:1/-1;height:10px;border-radius:99px;background:var(--line);overflow:hidden}
+.trow .tb i{display:block;height:100%;background:var(--accent)}
+.trow .n{font-variant-numeric:tabular-nums;color:var(--muted)}
+.voted{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
+.voted span{font-size:13px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
+.voted span.ok{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.seg button:disabled{cursor:default}
+
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+</style>
+</head>
+<body>
+
+
+<div class="wrap" id="app"></div>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<script src="config.js"></script>
+
+<script>
+/* ================= Questions ================= */
+const RAW = {
+sus_soft: `
+rater son train ou son avion
+devenir célèbre
+oublier l'anniversaire de sa mère
+pleurer devant un dessin animé
+se perdre avec un GPS
+finir sa vie avec 12 chats
+mourir en premier dans un film d'horreur
+gagner au loto et tout perdre en un an
+arriver en retard à son propre mariage
+se faire arrêter par la police pour une bêtise
+envoyer un message à la mauvaise personne
+manger le dernier morceau sans demander
+partir vivre à l'autre bout du monde sur un coup de tête
+devenir influenceur
+rire à un enterrement
+se lancer dans un business douteux
+s'endormir en soirée avant minuit
+tomber amoureux en vacances
+avoir un compte secret sur les réseaux
+passer 3 heures à choisir un film
+casser son téléphone cette année
+parler à ses plantes
+se battre avec un pigeon
+survivre sur une île déserte
+connaître par cœur les paroles d'une chanson ringarde
+faire un karaoké sans qu'on lui demande
+devenir président de la République
+oublier où il a garé sa voiture
+se faire arnaquer en ligne
+adopter un animal sans prévenir personne
+gagner un débat sans avoir raison
+dormir 14 heures d'affilée
+se tromper de prénom en plein rendez-vous
+lancer un podcast que personne n'écoute
+finir sa soirée au kebab
+devenir un parent super strict
+devenir millionnaire avant 40 ans
+se faire virer de son travail le premier jour
+participer à une téléréalité
+écrire un livre
+se faire tatouer un truc qu'il regrettera
+oublier ses clés à l'intérieur
+survivre à une apocalypse zombie
+être le premier mort dans une apocalypse zombie
+se perdre dans un IKEA
+manger une pizza entière tout seul
+faire une sieste au travail
+acheter un objet inutile parce qu'il était en promo
+répondre à un mail un mois plus tard
+avoir 200 onglets ouverts
+garder un ticket de caisse pendant des années
+devenir végétarien puis craquer pour un burger
+courir un marathon
+abandonner la salle de sport après une semaine
+se casser quelque chose en faisant du ski
+finir aux urgences à cause d'une bêtise
+rater la sortie d'autoroute
+perdre son portefeuille en voyage
+oublier son passeport le jour du départ
+se faire voler son vélo
+parler avec un accent après une semaine à l'étranger
+tomber dans les escaliers en public
+se ridiculiser devant son crush
+pleurer en écoutant de la musique
+être fan d'un boys band à 30 ans
+faire une crise pour un jeu de société
+tricher au Monopoly
+être mauvais perdant à la moindre partie de cartes
+faire une soirée Netflix au lieu de sortir
+s'inscrire à un cours de salsa
+partir en road trip sans rien prévoir
+se faire piquer par une méduse
+attraper un coup de soleil le premier jour des vacances
+se faire courser par un chien
+avoir peur d'un papillon
+crier en voyant une araignée
+parler à son chat comme à un humain
+dépenser tout son salaire en une semaine
+devoir de l'argent à tous ses potes
+rembourser ses amis avec trois mois de retard
+se lever à 5 h pour faire du sport
+se coucher à 5 h pour jouer aux jeux vidéo
+devenir streamer
+avoir un fan-club
+faire un procès à son voisin
+se disputer avec un inconnu sur Internet
+écrire un commentaire rageux sous une vidéo
+croire à une théorie du complot
+voir un fantôme
+se faire enlever par des extraterrestres
+devenir astronaute
+vivre dans une cabane au fond des bois
+ouvrir un restaurant
+cramer la cuisine en faisant des pâtes
+manger la même chose tous les jours
+commander à manger trois fois par semaine
+avoir un frigo vide en permanence
+se tromper de soirée
+venir les mains vides à un dîner
+arriver en avance à tout
+être le dernier à quitter la fête
+partir sans dire au revoir
+parler trop fort au restaurant
+se faire virer d'un bar
+danser seul au milieu de la piste
+s'endormir au cinéma
+spoiler la fin d'une série
+lire la fin d'un livre en premier
+pleurer à un mariage
+faire un discours gênant à un mariage
+se marier en premier
+avoir des enfants en premier
+avoir 5 enfants
+ne jamais se marier
+divorcer deux fois
+devenir un grand-parent super cool
+garder son doudou jusqu'à 30 ans
+vivre chez ses parents jusqu'à 35 ans
+appeler sa mère tous les jours
+oublier de répondre aux messages pendant une semaine
+répondre « mdr » sans rire
+envoyer des vocaux de 10 minutes
+mettre trois heures à répondre « ok »
+laisser ses amis en vu
+avoir 3 000 mails non lus
+avoir l'écran de téléphone cassé
+perdre ses écouteurs sans fil
+avoir toujours 2 % de batterie
+mettre 15 alarmes le matin
+rater un examen parce qu'il s'est réveillé en retard
+tricher à un examen
+devenir prof
+reprendre ses études à 40 ans
+changer complètement de métier
+démissionner sur un coup de tête
+devenir patron de sa propre boîte
+se faire licencier pour avoir dit ce qu'il pensait
+envoyer un mail à toute l'entreprise par erreur
+s'endormir en réunion
+rejoindre une secte
+devenir moine
+gagner un concours de mangeurs de piments
+finir dans le livre Guinness des records
+sauter en parachute
+avoir le vertige sur un tabouret
+faire le tour du monde
+apprendre cinq langues
+se croire bilingue après deux cours sur une appli
+abandonner une appli de langue au bout de trois jours
+garder une plante en vie
+tuer un cactus
+avoir une collection bizarre
+vendre ses affaires sur Vinted en permanence
+acheter des vêtements qu'il ne portera jamais
+porter le même pull toute la semaine
+sortir en pyjama pour acheter du pain
+mettre des chaussettes avec des sandales
+se teindre les cheveux en bleu
+se raser la tête sur un pari
+accepter n'importe quel défi
+perdre un pari et le regretter
+parier de l'argent sur un match
+devenir accro au café
+boire un café à 22 h
+parler tout seul en cuisinant
+chanter faux en voiture
+conduire comme un pilote de rallye
+rater son permis cinq fois
+rayer la voiture de ses parents
+se garer sur deux places
+recevoir une amende chaque mois
+se faire flasher sans arrêt
+prendre un taxi pour 500 mètres
+marcher 20 km pour éviter le métro
+se perdre dans sa propre ville
+demander son chemin à un arbre
+oublier sa carte bancaire au restaurant
+partir sans payer par accident
+trouver un billet par terre et le garder
+être trop honnête
+garder un secret toute sa vie
+révéler une surprise par erreur
+organiser une fête surprise réussie
+offrir un cadeau nul
+réoffrir un cadeau qu'on lui a fait
+oublier l'anniversaire de son ou sa partenaire
+faire une déclaration d'amour en public
+demander quelqu'un en mariage au restaurant
+pleurer pendant sa propre demande en mariage
+écrire des poèmes en secret
+avoir un journal intime
+faire semblant d'avoir lu un livre
+regarder des vidéos de chats pendant des heures
+devenir viral sur TikTok
+faire une danse TikTok en public
+prendre 200 selfies pour en garder un
+mettre un filtre sur toutes ses photos
+poster une story toutes les heures
+supprimer ses réseaux sociaux
+revenir sur les réseaux trois jours après les avoir supprimés
+vivre sans téléphone pendant un mois
+tenir une semaine sans sucre
+manger des chips au petit-déjeuner
+mettre de l'ananas sur sa pizza
+mettre du ketchup sur tout
+être difficile au restaurant
+renvoyer un plat en cuisine
+laisser un pourboire énorme
+devenir critique gastronomique
+cuisiner un plat immangeable pour tout le monde
+suivre une recette à la lettre et quand même la rater
+manger avec les doigts dans un restaurant chic
+renverser son verre sur quelqu'un
+casser un verre en soirée
+tomber de sa chaise
+rire tellement qu'il en pleure
+avoir le rire le plus contagieux
+raconter la même anecdote dix fois
+raconter des blagues nulles
+faire des jeux de mots toute la soirée
+imiter tout le monde
+devenir humoriste
+jouer dans un film
+jouer le méchant dans un film
+être espion sans que personne le sache
+être secrètement un génie
+cacher un talent incroyable
+savoir réparer n'importe quoi
+tout casser en voulant réparer
+monter un meuble IKEA à l'envers
+appeler un plombier pour rien
+avoir peur du noir
+dormir avec la lumière allumée
+ronfler le plus fort
+parler en dormant
+être somnambule
+se réveiller de bonne humeur tous les jours
+être grognon avant son café
+faire la grasse matinée jusqu'à 15 h
+se perdre en forêt
+adopter un animal exotique
+avoir un chien plus célèbre que lui
+déménager tous les ans
+vivre à la campagne avec des poules
+acheter un camping-car
+vivre sur un bateau
+devenir agriculteur
+survivre seul en montagne
+devenir expert en vin
+se lancer dans la poterie
+changer de coiffure tous les mois
+devenir le chouchou de sa belle-famille
+rester ami avec tous ses ex
+être le confident de tout le monde
+donner des conseils qu'il ne suit jamais
+avoir toujours raison, selon lui
+bouder pendant une semaine
+s'excuser pour rien
+dire « on verra » et ne jamais venir
+gagner à Questions pour un champion
+perdre au Uno et retourner la table
+pleurer en regardant une pub
+dire « c'était mieux avant »
+acheter une maison hantée
+se faire passer pour un touriste dans sa propre ville
+rater une photo de groupe à chaque fois
+fermer les yeux sur toutes les photos
+apprendre à jouer de la guitare pour draguer
+se casser le pied en dansant
+organiser les vacances de tout le groupe
+annuler les vacances à la dernière minute
+oublier sa valise à l'aéroport
+partir en vacances avec trois valises pour un week-end
+se faire piquer par une guêpe en mangeant
+se perdre dans un musée
+toucher une œuvre d'art interdite
+déclencher une alarme dans un magasin
+se coincer dans un ascenseur
+rester bloqué dans des toilettes
+casser une chaise en s'asseyant
+faire tomber son téléphone dans l'eau
+acheter le dernier téléphone dès sa sortie
+garder le même téléphone pendant 8 ans
+avoir encore un compte Facebook actif
+liker les photos de sa mère
+avoir ses parents en ami partout
+répondre au téléphone pendant un film
+oublier de couper son micro en visio
+faire une réunion en pyjama
+`,
+sus_spicy: `
+stalker son ex sur Instagram
+envoyer un message à son ex à 3 h du matin
+avoir un crush sur quelqu'un de ce groupe
+se remettre avec son ex
+embrasser un inconnu en soirée
+mentir pour éviter une soirée
+se marier à Las Vegas sur un coup de tête
+avoir le plus de matchs sur les applis
+garder un secret… pas très longtemps
+finir la soirée sans ses chaussures
+se faire larguer par message
+draguer le serveur ou la serveuse
+tomber sous le charme d'un ami d'ami
+avoir un rendez-vous catastrophique ce mois-ci
+raconter les potins du groupe
+répondre « je suis en route » encore au lit
+sortir avec deux personnes en même temps
+ghoster quelqu'un après un super rendez-vous
+tomber amoureux de son ou sa colocataire
+avoir une histoire avec un collègue
+flirter avec tout le monde sans s'en rendre compte
+se faire passer pour quelqu'un d'autre sur une appli
+liker une vieille photo de son crush par erreur
+lire les messages de son ou sa partenaire
+faire une scène de jalousie
+oublier le prénom de la personne avec qui il est rentré
+se réveiller sans savoir où il est
+finir la soirée en larmes
+appeler son ex en soirée
+avouer ses sentiments complètement ivre
+sortir avec l'ex d'un pote
+avoir un plan à trois
+envoyer une photo osée à la mauvaise personne
+avoir l'historique de recherche le plus gênant
+se faire surprendre par ses parents au mauvais moment
+mentir sur son nombre d'ex
+craquer pour les mauvais garçons ou les mauvaises filles
+tomber amoureux en une soirée
+avoir une aventure en vacances
+sortir avec quelqu'un beaucoup plus âgé
+sortir avec quelqu'un beaucoup plus jeune
+se faire tromper sans s'en rendre compte
+tromper son ou sa partenaire
+avoir une relation secrète
+se mettre en couple avec quelqu'un du groupe
+avoir un crush sur le ou la partenaire d'un ami
+rentrer avec quelqu'un rencontré il y a une heure
+se prendre un râteau en draguant
+vomir en soirée
+faire un strip-tease en soirée
+se baigner tout nu
+se faire virer d'une boîte de nuit
+mentir à ses parents sur l'endroit où il dort
+avoir des photos compromettantes sur son téléphone
+dire « plus jamais l'alcool » chaque dimanche
+faire le premier pas
+attendre des mois que l'autre fasse le premier pas
+envoyer un vocal gênant en soirée
+s'embrouiller avec un videur
+finir la soirée au commissariat
+dire du mal de quelqu'un juste derrière son dos
+avoir une double vie
+tomber amoureux de son prof
+draguer avec une phrase d'accroche nulle
+se faire larguer le jour de son anniversaire
+réinstaller une appli de rencontre juste après une rupture
+`,
+deja_soft: `
+menti sur son âge
+fait semblant d'être malade pour éviter le travail ou l'école
+pleuré devant un film au cinéma
+oublié le prénom de quelqu'un juste après l'avoir entendu
+chanté à fond sous la douche
+été pris en photo dans une situation gênante
+dormi plus de 12 heures d'affilée
+mangé quelque chose tombé par terre
+relu une conversation pendant des heures
+inventé une fausse excuse pour annuler un plan
+perdu ses clés plus de trois fois en un mois
+pris le mauvais bus ou le mauvais métro
+regardé une série entière en un week-end
+parlé tout seul dans la rue
+fait semblant de rire à une blague qu'il n'avait pas comprise
+raté un examen
+fait un selfie avec une célébrité
+envoyé un vocal de plus de 5 minutes
+cassé un objet et l'avoir caché
+voyagé seul
+oublié un rendez-vous important
+goûté de la nourriture pour animaux
+eu un fou rire au pire moment
+fait du camping sauvage
+acheté un truc inutile à 2 h du matin
+fait semblant de connaître un artiste
+dansé sur une table
+porté un vêtement à l'envers toute une journée
+fait tomber son téléphone dans les toilettes
+appelé un prof « maman » ou « papa »
+menti sur son CV
+pris l'ascenseur pour un seul étage
+raté un avion
+dormi dans un aéroport
+dormi dans sa voiture
+fait une nuit blanche pour réviser
+triché à un examen
+été collé à l'école
+été viré de cours
+séché les cours
+fait le mur
+fugué
+eu une amende
+été arrêté par la police
+conduit sans permis
+eu un accident de voiture
+rayé une voiture sans rien dire
+fait du stop
+pris le train sans billet
+fraudé dans le métro
+été contrôlé sans billet
+perdu son téléphone
+cassé l'écran de son téléphone
+oublié son téléphone dans un taxi
+fouillé dans le téléphone de quelqu'un
+envoyé un message à la mauvaise personne
+critiqué quelqu'un dans un message envoyé à cette même personne
+laissé quelqu'un en vu exprès
+bloqué quelqu'un sur les réseaux
+créé un faux compte
+posté quelque chose et l'avoir supprimé dans la minute
+acheté des followers
+fait un live sur les réseaux
+été viral sur Internet
+participé à un concours de beauté
+participé à une émission de télé
+été figurant dans un film
+rencontré une star
+demandé un autographe
+chanté au karaoké
+fait du théâtre
+joué d'un instrument en public
+gagné un concours
+gagné de l'argent au jeu
+perdu de l'argent au jeu
+joué au casino
+acheté un ticket à gratter
+trouvé de l'argent par terre
+perdu son portefeuille
+oublié sa carte dans le distributeur
+été à découvert
+emprunté de l'argent sans le rendre
+prêté de l'argent sans jamais le revoir
+vendu quelque chose sur Vinted ou Leboncoin
+acheté une contrefaçon
+volé quelque chose dans un magasin
+piqué des bonbons au vrac
+mangé dans un magasin avant de payer
+renvoyé un plat au restaurant
+quitté un restaurant sans payer
+fait la plonge dans un restaurant
+travaillé dans un fast-food
+été viré d'un job
+démissionné sur un coup de tête
+menti à son patron
+fait une sieste au travail
+pleuré au travail
+envoyé un mail à la mauvaise personne au travail
+répondu « à tous » par erreur
+eu un fou rire en réunion
+été en retard à un entretien d'embauche
+passé un entretien en visio en pyjama
+dormi chez un inconnu
+dormi à la belle étoile
+vu une aurore boréale
+nagé avec des dauphins
+sauté en parachute
+fait du saut à l'élastique
+fait de la plongée
+fait du surf
+skié hors piste
+escaladé une montagne
+couru un marathon
+payé une salle de sport sans jamais y aller
+fait un régime qui a duré un jour
+mangé un pot de glace entier d'un coup
+mangé une pizza entière tout seul
+bu du lait directement à la bouteille
+remis un aliment dans le frigo après l'avoir léché
+mangé un plat périmé
+été malade après un repas
+vomi dans un transport
+eu le mal de mer
+fini aux urgences pour une raison idiote
+eu des points de suture
+cassé un os
+marché sur un Lego
+eu peur d'un animal minuscule
+été mordu par un animal
+adopté un animal
+sauvé un animal
+parlé à un animal comme à un humain
+donné un prénom à un objet
+dormi avec une peluche à l'âge adulte
+eu un ami imaginaire
+cru au Père Noël après 10 ans
+eu peur du noir à l'âge adulte
+cru voir un fantôme
+cru voir un OVNI
+consulté une voyante
+lu son horoscope très sérieusement
+cru à une fausse information
+participé à une manifestation
+voté blanc
+fait du bénévolat
+donné son sang
+planté un arbre
+cuisiné pour plus de 10 personnes
+déclenché l'alarme incendie en cuisinant
+mis le feu à quelque chose par accident
+inondé une salle de bain
+cassé quelque chose chez quelqu'un
+bouché les toilettes chez quelqu'un
+dormi dans une baignoire
+oublié de fermer la porte à clé toute la nuit
+été enfermé dehors
+appelé un serrurier
+escaladé une fenêtre pour rentrer chez lui
+oublié le code de sa carte bancaire
+oublié son propre numéro de téléphone
+appelé quelqu'un par erreur
+décroché sans le faire exprès
+fait semblant d'être au téléphone pour éviter quelqu'un
+fait semblant de ne pas voir quelqu'un dans la rue
+changé de trottoir pour éviter quelqu'un
+fait coucou à quelqu'un qui saluait une autre personne
+fait un câlin à un inconnu
+parlé à un inconnu pendant des heures
+fait une rencontre incroyable dans un train
+raté son arrêt parce qu'il s'était endormi
+bavé en dormant dans les transports
+ronflé en public
+rêvé de quelqu'un de ce groupe
+parlé en dormant
+été somnambule
+menti sur son poids
+menti sur sa taille
+coupé ses cheveux lui-même
+raté une coupe de cheveux au point de porter un bonnet
+teint ses cheveux d'une couleur bizarre
+eu un piercing
+fait un tatouage
+regretté un tatouage
+porté un costume en dehors d'Halloween
+été le seul déguisé à une soirée
+été habillé pareil que quelqu'un en soirée
+porté le même vêtement trois jours de suite
+acheté un vêtement sans jamais le porter
+rendu un vêtement après l'avoir porté
+réoffert un cadeau
+oublié un anniversaire important
+organisé une fête surprise
+gâché une surprise
+pleuré à un mariage
+fait un discours à un mariage
+attrapé le bouquet de la mariée
+été témoin à un mariage
+été parrain ou marraine
+gardé des enfants
+perdu un enfant de vue au parc
+fait pleurer un enfant sans le vouloir
+eu peur d'un clown
+hurlé dans un manège
+fait une attraction à sensations et regretté
+regardé un film d'horreur les yeux fermés
+regardé un film d'horreur seul la nuit
+pleuré devant un dessin animé
+regardé le même film plus de 10 fois
+connu toutes les répliques d'un film
+appris une chorégraphie entière
+fait une danse TikTok
+inventé les paroles d'une chanson en la chantant
+écrit une chanson
+écrit un poème d'amour
+tenu un journal intime
+écrit une lettre qu'il n'a jamais envoyée
+lu le journal intime de quelqu'un
+écouté une conversation en cachette
+répété un secret qu'on lui avait confié
+gardé un secret pendant plus de 5 ans
+menti à ses parents sur ses notes
+imité la signature de ses parents
+trouvé ses cadeaux de Noël avant Noël
+fait semblant d'aimer un cadeau
+fait une blague qui a mal tourné
+fait une blague au téléphone
+sonné aux portes avant de s'enfuir
+été pris la main dans le sac
+accusé quelqu'un d'autre d'une bêtise qu'il avait faite
+fait pleurer son frère ou sa sœur exprès
+mangé les restes de quelqu'un sans demander
+mangé le dernier morceau en douce
+bu dans le verre de quelqu'un par erreur
+fait un discours gênant en soirée
+dansé seul au milieu de la piste
+perdu ses amis en festival
+dormi dans une tente sous la pluie
+fait un road trip
+voyagé sur un autre continent
+vécu à l'étranger
+fait Erasmus
+fait semblant de parler une langue étrangère
+répondu en anglais à quelqu'un qui parlait français
+tapé « comment faire » sur Internet pour une chose très simple
+pleuré pour un jeu vidéo
+cassé une manette de rage
+joué aux jeux vidéo toute une nuit
+triché à un jeu de société
+retourné le plateau d'un jeu de société
+boudé après une défaite
+fait une sieste de plus de 4 heures
+mangé un repas entier debout devant le frigo
+mangé des céréales au dîner
+fait les courses le ventre vide et tout acheté
+oublié des courses dans le coffre pendant des jours
+perdu sa voiture sur un parking
+dormi en cours
+fait un exposé sans rien préparer
+été le chouchou d'un prof
+redoublé
+eu zéro à un contrôle
+fait une sortie scolaire mémorable
+été délégué de classe
+fait une colonie de vacances
+eu un correspondant étranger
+eu un surnom gênant à l'école
+`,
+deja_spicy: `
+stalké un ex jusqu'à ses vieilles photos
+envoyé un message à son ex et l'avoir regretté
+embrassé quelqu'un de ce groupe
+eu un crush sur un prof
+ghosté quelqu'un
+été ghosté
+menti sur une appli de rencontre
+eu un rendez-vous avec quelqu'un rencontré en ligne
+été recalé à l'entrée d'une boîte
+fini une soirée sans savoir comment il est rentré
+dit « je t'aime » sans le penser
+lu les messages de quelqu'un d'autre
+fait semblant d'être en couple
+été pris en flagrant délit de mensonge
+dragué quelqu'un pour avoir une réduction
+oublié avec qui il était venu en soirée
+embrassé un inconnu
+embrassé deux personnes dans la même soirée
+eu un coup d'un soir
+eu un crush sur le ou la partenaire d'un ami
+été amoureux de son meilleur ami
+trompé quelqu'un
+été trompé
+rompu par message
+été largué par message
+recouché avec un ex
+envoyé une photo osée
+reçu une photo osée non désirée
+fait un plan à trois
+été surpris par ses parents dans une situation gênante
+utilisé une appli de rencontre
+matché avec quelqu'un qu'il connaissait
+swipé quelqu'un de ce groupe
+quitté un rendez-vous en avance parce qu'il était trop nul
+inventé une urgence pour fuir un rendez-vous
+dormi chez quelqu'un dont il ne connaissait pas le nom
+fait le chemin de la honte le lendemain matin
+vomi en soirée
+vomi sur quelqu'un
+fini une soirée en pleurs
+appelé son ex ivre
+dit à quelqu'un qu'il l'aimait en étant ivre
+été viré d'un bar ou d'une boîte
+fait un strip-tease
+pris un bain de minuit tout nu
+menti à ses parents pour aller en soirée
+dormi dehors après une soirée
+perdu un objet de valeur en soirée
+eu un trou noir après une soirée
+été en garde à vue
+dragué un serveur ou une serveuse
+laissé son numéro sur une serviette ou un ticket
+regretté un message envoyé à 3 h du matin
+liké une vieille photo de son crush par erreur
+eu une relation secrète
+eu une histoire avec un collègue
+été avec quelqu'un qui avait plus de 10 ans d'écart
+quitté quelqu'un pour une autre personne
+réveillé les voisins en rentrant de soirée
+menti sur son nombre de partenaires
+eu des sentiments pour deux personnes en même temps
+fait un rêve gênant sur quelqu'un de ce groupe
+effacé son historique en vitesse
+fait une déclaration d'amour qui a mal tourné
+dit du mal d'un ami juste avant qu'il arrive
+eu un crush sur la sœur ou le frère d'un ami
+`
+};
+const RAW2 = {
+sus_mod: `
+sortir avec deux personnes dans la même semaine
+embrasser quelqu'un moins de 10 minutes après l'avoir rencontré
+avoir un crush secret sur un collègue
+caser deux amis ensemble
+se faire draguer par le père ou la mère d'un ami
+draguer quelqu'un déjà en couple sans le savoir
+donner un faux numéro en soirée
+se faire passer pour célibataire
+jouer à action ou vérité et tout regretter
+avoir un ex dans chaque ville
+recontacter un ex « juste pour prendre des nouvelles »
+faire semblant de ne pas être intéressé
+être la deuxième option de quelqu'un sans le savoir
+présenter quelqu'un à ses parents au bout d'une semaine
+vivre une relation à distance
+garder le pull d'un ex pendant des années
+écrire à son crush puis supprimer le message
+faire une déclaration d'amour par vocal
+se faire griller en train de stalker quelqu'un
+avoir une histoire avec un voisin
+embrasser quelqu'un dans un taxi
+dormir chez un ex « juste pour dormir »
+avoir un plan cul régulier
+craquer pour quelqu'un sur une photo de groupe
+supprimer des messages compromettants
+se faire porter malade le lendemain d'une soirée
+tomber amoureux au premier regard toutes les semaines
+séduire quelqu'un au karaoké
+avoir le plus de conquêtes du groupe
+faire une crise de jalousie pour un like
+avoir un crush sur le serveur de son resto préféré
+se faire larguer en public
+quitter quelqu'un au bout de trois jours
+draguer pendant un enterrement de vie de garçon ou de jeune fille
+finir une soirée chez un inconnu
+mettre un faux prénom sur une appli de rencontre
+avoir trois conversations de drague en même temps
+faire un slow avec un inconnu
+`,
+sus_hard: `
+faire une golden shower
+faire l'amour dans un lieu public
+se faire surprendre en pleine action
+avoir le plus gros tableau de chasse du groupe
+coucher le premier soir
+coucher avec quelqu'un sans connaître son prénom
+participer à une soirée libertine
+avoir un tiroir rempli de sextoys
+offrir un sextoy à quelqu'un
+filmer un moment intime
+ouvrir un compte de contenu pour adultes
+faire du sexting avec un inconnu
+faire l'amour dans les toilettes d'une boîte
+faire l'amour dans un avion
+simuler un orgasme
+faire un strip-tease à son ou sa partenaire
+aimer qu'on l'attache
+proposer un jeu de rôle coquin
+avoir un déguisement coquin dans son placard
+coucher avec un collègue
+coucher avec son patron ou sa patronne
+coucher avec l'ex d'un ami
+être infidèle
+coucher avec quelqu'un de ce groupe
+faire l'amour 5 fois dans la même journée
+casser un lit
+appeler quelqu'un par le mauvais prénom au lit
+faire l'amour en appel vidéo
+garder les nudes de ses ex
+faire l'amour pendant que d'autres dorment dans la pièce
+coucher avec quelqu'un en couple
+arriver au travail avec un suçon
+voyager avec un sextoy dans son bagage cabine
+oublier son sous-vêtement chez quelqu'un
+utiliser de la nourriture au lit
+coucher avec quelqu'un pour se venger
+coucher avec quelqu'un pour rendre un ex jaloux
+faire l'amour dans un ascenseur
+finir tout nu au strip poker
+aller dans un club de strip-tease
+faire une lap dance
+faire du naturisme
+être le plus bruyant au lit
+avoir un fantasme vraiment bizarre
+tester toutes les positions du Kamasutra
+faire l'amour dans la voiture de ses parents
+avoir une sex tape quelque part
+coucher avec deux personnes du même groupe d'amis
+avoir un plan cul dans chaque ville
+recoucher avec un ex alors qu'il est en couple
+faire l'amour dans une cabine d'essayage
+faire l'amour à la plage
+faire l'amour dans un jacuzzi
+coucher avec quelqu'un rencontré sur une appli le soir même
+avoir un fétichisme des pieds
+se faire griller en train de regarder un film X
+envoyer une vidéo osée
+avoir des menottes dans sa table de nuit
+faire l'amour en pleine nature
+proposer un plan à trois à son ou sa partenaire
+aller dans un club échangiste
+coucher avec quelqu'un qui a plus de 15 ans d'écart
+faire l'amour au bureau
+faire l'amour dans un train de nuit
+acheter de la lingerie juste pour un soir
+avoir un plan à quatre
+`,
+deja_mod: `
+sorti avec deux personnes dans la même semaine
+embrassé quelqu'un moins de 10 minutes après l'avoir rencontré
+eu deux rendez-vous le même jour
+fait croire qu'il était célibataire alors qu'il ne l'était pas
+recontacté un ex juste pour savoir s'il pensait encore à lui
+eu un crush sur quelqu'un de marié
+caché une relation à ses amis
+présenté quelqu'un à ses parents trop vite
+quitté quelqu'un après moins d'une semaine
+donné un faux prénom en soirée
+donné un faux numéro
+fait semblant de ne pas être intéressé alors qu'il l'était
+été jaloux du couple d'un ami
+embrassé quelqu'un sur un pari
+joué à action ou vérité et regretté
+fait un slow avec un inconnu
+séché le travail après une soirée
+fini une soirée chez un inconnu
+partagé un lit avec un ami sans que rien ne se passe… ou presque
+gardé un vêtement d'un ex
+regardé le téléphone de son ou sa partenaire en cachette
+supprimé des messages pour qu'on ne les voie pas
+flirté pour éviter une amende
+fait une déclaration d'amour par message
+été la deuxième option de quelqu'un
+eu une histoire avec un voisin
+embrassé quelqu'un dans un taxi
+dormi chez un ex « juste pour dormir »
+eu un plan cul régulier
+fait semblant de dormir pour éviter une conversation
+rompu par vocal
+eu une relation à distance
+craqué pour quelqu'un sur une photo de groupe
+eu trois conversations de drague en même temps
+mis un faux âge sur une appli de rencontre
+dragué le témoin à un mariage
+été dragué par le père ou la mère d'un ami
+`,
+deja_hard: `
+fait une golden shower
+fait l'amour dans un lieu public
+fait l'amour dans une voiture
+fait l'amour à la plage
+fait l'amour dans les toilettes d'un bar ou d'une boîte
+couché avec quelqu'un dont il ne connaissait pas le prénom
+couché avec quelqu'un le premier soir
+couché avec deux personnes différentes le même jour
+couché avec quelqu'un de ce groupe
+fait un plan à quatre ou plus
+participé à une soirée libertine
+utilisé un sextoy
+offert un sextoy
+regardé un film X avec son ou sa partenaire
+filmé un moment intime
+envoyé une vidéo osée
+fait du sexting avec quelqu'un qu'il n'avait jamais vu
+payé un abonnement de contenu pour adultes
+fait l'amour au travail
+fait l'amour chez ses parents
+été surpris en plein acte
+simulé un orgasme
+fait un strip-tease privé
+utilisé des menottes
+testé le bondage
+fait un jeu de rôle coquin
+porté un déguisement coquin
+fait l'amour en pleine nature
+fait l'amour dans un avion
+fait l'amour dans un train
+fait l'amour dans une piscine ou un jacuzzi
+couché avec un collègue
+couché avec son patron ou sa patronne
+couché avec l'ex d'un ami
+couché avec le meilleur ami de son ex
+couché avec un ex alors qu'il était en couple
+été infidèle
+fait un plan à trois avec deux inconnus
+embrassé quelqu'un du même sexe pour la première fois en soirée
+été avec quelqu'un de plus de 15 ans d'écart
+couché avec quelqu'un rencontré sur une appli le soir même
+eu une relation purement physique pendant plus de 6 mois
+fait du naturisme
+fait l'amour plus de 5 fois dans la même journée
+cassé un meuble pendant l'acte
+appelé quelqu'un par le mauvais prénom au lit
+fait l'amour en appel vidéo
+gardé des nudes d'un ex
+fait l'amour dans une pièce où d'autres gens dormaient
+eu une aventure avec quelqu'un en couple
+eu un suçon visible au travail
+mis un sextoy dans son bagage cabine
+oublié un sous-vêtement chez quelqu'un
+gardé un sous-vêtement de quelqu'un en souvenir
+fait l'amour sur une machine à laver
+utilisé de la nourriture au lit
+couché avec quelqu'un pour se venger
+couché avec quelqu'un pour rendre un ex jaloux
+fait l'amour dans un ascenseur
+joué au strip poker
+fini tout nu au strip poker
+été dans un club de strip-tease
+fait une lap dance
+fait l'amour dans une cabine d'essayage
+fréquenté un club échangiste
+proposé un plan à trois à son ou sa partenaire
+acheté de la lingerie juste pour un soir
+`
+};
+const LEVELS = [["soft","Tranquille"],["mod","Modéré"],["hard","Hard"]];
+function poolFor(mode, level, n){
+  const tiers = level==="hard" ? ["hard","spicy","soft"] : level==="mod" ? ["spicy","soft"] : ["soft"];
+  let out = [];
+  tiers.forEach((k, idx) => {
+    const lvl = k==="hard" ? "hard" : k==="spicy" ? "mod" : undefined;
+    const items = shuffle(Q[mode][k]).map(t => lvl ? {t, lvl} : {t});
+    out = out.concat(idx===0 ? items : items.slice(0, Math.max(0, n - out.length)));
+  });
+  return out;
+}
+const L = s => [...new Set(s.trim().split("\n").map(x => x.trim()).filter(Boolean))];
+const Q = {
+  sus:  { soft: L(RAW.sus_soft),  spicy: L(RAW.sus_spicy + "\n" + RAW2.sus_mod), hard: L(RAW2.sus_hard) },
+  deja: { soft: L(RAW.deja_soft), spicy: L(RAW.deja_spicy + "\n" + RAW2.deja_mod), hard: L(RAW2.deja_hard) }
+};
+const MODES = {
+  sus: {name:"Le plus susceptible", lead:"Qui est le plus susceptible de…", accent:"var(--sus)", ink:"var(--sus-ink)",
+        instr:"Comptez jusqu'à 3, tout le monde pointe quelqu'un du doigt, puis touchez celui qui a le plus de votes.",
+        endTitle:"Le classement des suspects"},
+  deja: {name:"Qui a déjà", lead:"Qui a déjà…", accent:"var(--deja)", ink:"var(--deja-ink)",
+         instr:"Touchez tous ceux qui l'ont déjà fait. Pas de mensonges.",
+         endTitle:"Le classement des aveux"}
+};
+
+/* ================= État ================= */
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem("qdn_"+k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem("qdn_"+k, JSON.stringify(v)); }catch(e){} }
+};
+const S = {
+  screen:"home",
+  players: store.get("players", ["Léa","Hugo","Inès","Tom"]),
+  rounds: [10,20,40,80].includes(store.get("rounds", 20)) ? store.get("rounds", 20) : 20,
+  level: ["soft","mod","hard"].includes(store.get("level","soft")) ? store.get("level","soft") : "soft",
+  custom: store.get("custom", {sus:"", deja:""}),
+  game:null
+};
+const save = () => { store.set("players",S.players); store.set("rounds",S.rounds); store.set("level",S.level); store.set("custom",S.custom); };
+
+const esc = s => String(s).replace(/[&<>"']/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+const shuffle = a => { a = a.slice(); for(let i=a.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); [a[i],a[j]]=[a[j],a[i]]; } return a; };
+const app = document.getElementById("app");
+
+/* ================= Accueil ================= */
+function renderHome(){
+  const enough = S.players.length >= 2;
+  app.innerHTML = `
+    <header class="brand">
+      <span class="label">Jeu de soirée entre amis</span>
+      <h1>Qui <span>de</span> <em>nous</em> ?</h1>
+      <p>Un seul téléphone, posé au milieu. Ajoutez la bande, choisissez un mode, et que les vérités sortent.</p>
+    </header>
+
+    <section class="online-cta">
+      <div><h2>Jouer en ligne</h2><p>Chacun sur son téléphone ou son PC, avec un code de partie et des votes secrets.</p></div>
+      <button class="btn" id="goOnline">Jouer en ligne</button>
+    </section>
+
+    <div class="label">Ou sur un seul appareil</div>
+
+    <section class="panel" aria-labelledby="t-players">
+      <div class="label" id="t-players">Les joueurs · ${S.players.length}</div>
+      <form class="addrow" id="addForm">
+        <input id="nameInput" maxlength="20" placeholder="Prénom du joueur" autocomplete="off" aria-label="Prénom du joueur">
+        <button class="btn" type="submit">Ajouter</button>
+      </form>
+      <div class="chips">
+        ${S.players.map((p,i)=>`<span class="chip">${esc(p)}<button type="button" data-rm="${i}" aria-label="Retirer ${esc(p)}">×</button></span>`).join("")}
+      </div>
+      ${enough ? "" : `<p class="hint">Il faut au moins 2 joueurs pour lancer une partie.</p>`}
+    </section>
+
+    <section class="panel" aria-label="Réglages">
+      <div class="opts">
+        <div class="opt"><span class="label">Questions</span>
+          <div class="seg" role="group" aria-label="Nombre de questions">
+            ${[10,20,40,80].map(n=>`<button type="button" data-rounds="${n}" aria-pressed="${S.rounds===n}">${n}</button>`).join("")}
+          </div>
+        </div>
+        <div class="opt"><span class="label">Ambiance</span>
+          <div class="seg" role="group" aria-label="Ambiance">
+            ${LEVELS.map(([k,l])=>`<button type="button" data-level="${k}" aria-pressed="${S.level===k}">${l}</button>`).join("")}
+          </div>
+        </div>
+      </div>
+      ${S.level==="hard" ? `<p class="hint">Hard : questions sur le sexe, réservé aux adultes consentants.</p>` : ""}
+      <details class="custom">
+        <summary>Vos propres questions</summary>
+        <div class="inner">
+          <p class="hint">Une question par ligne. Elles sont mélangées avec les autres.</p>
+          <label class="label" for="cSus">Qui est le plus susceptible de…</label>
+          <textarea id="cSus" placeholder="finir la pizza tout seul">${esc(S.custom.sus)}</textarea>
+          <label class="label" for="cDeja">Qui a déjà…</label>
+          <textarea id="cDeja" placeholder="raté le dernier métro">${esc(S.custom.deja)}</textarea>
+        </div>
+      </details>
+    </section>
+
+    <section class="modes" aria-label="Choisir un mode">
+      <button class="mode sus" data-mode="sus" ${enough?"":"disabled"}>
+        <span class="tag">Mode 1 · on pointe du doigt</span>
+        <div><h2>Qui est le plus susceptible de…</h2></div>
+        <p>Le groupe vote. Celui qui ramasse le plus de doigts prend le point.</p>
+      </button>
+      <button class="mode deja" data-mode="deja" ${enough?"":"disabled"}>
+        <span class="tag">Mode 2 · on avoue</span>
+        <div><h2>Qui a déjà…</h2></div>
+        <p>Chacun avoue ce qu'il a fait. Chaque aveu rapporte un point.</p>
+      </button>
+    </section>
+  `;
+  document.getElementById("goOnline").onclick = openOnline;
+  const input = document.getElementById("nameInput");
+  document.getElementById("addForm").addEventListener("submit", e => {
+    e.preventDefault();
+    const v = input.value.trim();
+    if(!v) return;
+    if(S.players.some(p=>p.toLowerCase()===v.toLowerCase())){ input.value=""; input.placeholder="Déjà dans la liste"; return; }
+    S.players.push(v); save(); renderHome(); document.getElementById("nameInput").focus();
+  });
+  app.querySelectorAll("[data-rm]").forEach(b=>b.onclick=()=>{ S.players.splice(+b.dataset.rm,1); save(); renderHome(); });
+  app.querySelectorAll("[data-rounds]").forEach(b=>b.onclick=()=>{ S.rounds=+b.dataset.rounds; save(); renderHome(); });
+  app.querySelectorAll("[data-level]").forEach(b=>b.onclick=()=>{ S.level=b.dataset.level; save(); renderHome(); });
+  document.getElementById("cSus").oninput = e => { S.custom.sus = e.target.value; save(); };
+  document.getElementById("cDeja").oninput = e => { S.custom.deja = e.target.value; save(); };
+  app.querySelectorAll("[data-mode]").forEach(b=>b.onclick=()=>startGame(b.dataset.mode));
+}
+
+/* ================= Partie ================= */
+function startGame(mode){
+  const own = S.custom[mode].split("\n").map(s=>s.trim().replace(/^(qui est le plus susceptible de|qui a déjà)\s*/i,"").replace(/\s*\?$/,"")).filter(Boolean)
+    .map(t=>({t, own:true}));
+  let pool = poolFor(mode, S.level, S.rounds);
+  const deck = own.concat(shuffle(pool)).slice(0, Math.max(S.rounds, own.length));
+  S.game = { mode, deck: shuffle(deck).slice(0, S.rounds), i:0, scores:Object.fromEntries(S.players.map(p=>[p,0])), picked:new Set(), revealed:null };
+  setAccent(mode);
+  S.screen="play"; render();
+}
+function setAccent(mode){
+  document.documentElement.style.setProperty("--accent", MODES[mode].accent);
+  document.documentElement.style.setProperty("--accent-ink", MODES[mode].ink);
+}
+
+function renderPlay(){
+  const g = S.game, M = MODES[g.mode], card = g.deck[g.i];
+  const pct = (g.i/g.deck.length)*100;
+  const revealed = g.revealed;
+  app.innerHTML = `
+    <div class="topbar">
+      <button class="btn ghost" id="quit">Quitter</button>
+      <span class="progress">Question ${g.i+1} / ${g.deck.length}</span>
+    </div>
+    <div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div>
+
+    <article class="card" aria-live="polite">
+      ${card.lvl ? `<span class="spicy">${card.lvl==="hard" ? "Hard" : "Modéré"}</span>` : card.own ? `<span class="spicy">Question maison</span>` : ""}
+      <div class="lead">${M.lead}</div>
+      <div class="q">${esc(card.t)} ?</div>
+    </article>
+
+    ${revealed ? renderReveal(revealed) : `
+      <p class="instr">${M.instr}</p>
+      ${g.mode==="sus" ? `<div class="actions"><button class="btn ghost" id="count">Lancer le 3, 2, 1</button></div>` : ""}
+      <div class="players">
+        ${S.players.map(p=>`<button class="pbtn" data-p="${esc(p)}" aria-pressed="${g.picked.has(p)}">${esc(p)}<small>${g.scores[p]} pt${g.scores[p]>1?"s":""}</small></button>`).join("")}
+      </div>
+      <div class="actions">
+        <button class="btn ghost" id="skip">Passer</button>
+        ${g.mode==="deja" ? `<button class="btn accent" id="validate">${g.picked.size ? `Valider (${g.picked.size})` : "Personne"}</button>` : ""}
+      </div>
+    `}
+  `;
+  document.getElementById("quit").onclick = () => { S.screen="home"; render(); };
+  if(revealed){ document.getElementById("next").onclick = next; return; }
+
+  app.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{
+    const p = b.dataset.p;
+    if(g.mode==="sus"){ g.scores[p]++; g.revealed={who:[p]}; renderPlay(); }
+    else { g.picked.has(p) ? g.picked.delete(p) : g.picked.add(p); renderPlay(); }
+  });
+  document.getElementById("skip").onclick = next;
+  const v = document.getElementById("validate");
+  if(v) v.onclick = () => { const who=[...g.picked]; who.forEach(p=>g.scores[p]++); g.revealed={who}; renderPlay(); };
+  const c = document.getElementById("count");
+  if(c) c.onclick = countdown;
+}
+
+function renderReveal(r){
+  const g = S.game;
+  let big, sub;
+  if(g.mode==="sus"){ big = esc(r.who[0]); sub = "a été désigné par le groupe. +1 point."; }
+  else if(!r.who.length){ big = "Personne"; sub = "Des anges, ou des menteurs."; }
+  else if(r.who.length===S.players.length){ big = "Tout le monde"; sub = "Personne n'est innocent ici. +1 pour chacun."; }
+  else { big = r.who.map(esc).join(", "); sub = r.who.length>1 ? "l'ont déjà fait. +1 point chacun." : "l'a déjà fait. +1 point."; }
+  const last = g.i === g.deck.length-1;
+  return `
+    <div class="result"><div class="big">${big}</div><p class="instr">${sub}</p></div>
+    <div class="actions"><button class="btn accent" id="next">${last ? "Voir le classement" : "Question suivante"}</button></div>`;
+}
+
+function next(){
+  const g = S.game;
+  g.revealed = null; g.picked = new Set();
+  if(g.i >= g.deck.length-1){ S.screen="end"; } else { g.i++; }
+  render();
+}
+
+function countdown(){
+  const ov = document.createElement("div"); ov.className="countdown"; document.body.appendChild(ov);
+  const seq = ["3","2","1","Pointez !"]; let k=0;
+  const tick = () => {
+    if(k>=seq.length){ ov.remove(); return; }
+    ov.innerHTML = `<span style="${k===3?'font-size:min(18vw,110px)':''}">${seq[k]}</span>`; k++;
+    setTimeout(tick, k===4 ? 1100 : 800);
+  };
+  ov.onclick = () => ov.remove();
+  tick();
+}
+
+/* ================= Fin ================= */
+function renderEnd(){
+  const g = S.game, M = MODES[g.mode];
+  const ranked = Object.entries(g.scores).sort((a,b)=>b[1]-a[1]);
+  const top = ranked[0][1];
+  const winners = ranked.filter(r=>r[1]===top && top>0).map(r=>r[0]);
+  const crown = !winners.length ? "Personne n'a marqué. Suspect."
+    : g.mode==="sus" ? `${winners.map(esc).join(" et ")} ${winners.length>1?"sont":"est"} officiellement le plus susceptible de tout.`
+    : `${winners.map(esc).join(" et ")} ${winners.length>1?"ont":"a"} le passé le plus chargé du groupe.`;
+  let rank = 0, prev = null;
+  app.innerHTML = `
+    <div class="topbar"><span class="label">${M.name} · ${g.deck.length} questions</span></div>
+    <h1 style="font-size:clamp(36px,10vw,56px);font-weight:800;letter-spacing:-.02em">${M.endTitle}</h1>
+    <p class="crown">${crown}</p>
+    <div class="podium">
+      ${ranked.map(([p,s],idx)=>{ if(s!==prev){ rank=idx+1; prev=s; }
+        return `<div class="row ${s===top&&top>0?"first":""}"><span class="rk">${rank}</span><span class="nm">${esc(p)}</span><span class="sc">${s} pt${s>1?"s":""}</span></div>`; }).join("")}
+    </div>
+    <div class="actions">
+      <button class="btn accent" id="again">Rejouer</button>
+      <button class="btn ghost" id="other">Changer de mode</button>
+    </div>
+  `;
+  document.getElementById("again").onclick = () => startGame(g.mode);
+  document.getElementById("other").onclick = () => startGame(g.mode==="sus" ? "deja" : "sus");
+  const home = document.createElement("button"); home.className="btn ghost"; home.textContent="Modifier les joueurs";
+  home.onclick = () => { S.screen="home"; render(); };
+  app.querySelector(".actions").appendChild(home);
+}
+
+/* ================= En ligne (Firebase Realtime Database) ================= */
+const O = { db:null, me:null, ready:false, code:null, room:null, loaded:false, off:null, err:"", timer:null, stale:false, busy:false, revealing:false, key:"" };
+Object.defineProperty(O, "players", { get: () => (O.room && O.room.players) || {} });
+Object.defineProperty(O, "votes",   { get: () => (O.room && O.room.votes) || {} });
+const ALPH = "ABCDEFGHJKLMNPQRSTUVWXYZ";
+function initCaps(){
+  if(O.ready) return;
+  try{
+    const cfg = window.FIREBASE_CONFIG;
+    if(window.firebase && cfg && cfg.apiKey && cfg.databaseURL && !/COLLE/i.test(cfg.apiKey)){
+      const app = firebase.apps.length ? firebase.app() : firebase.initializeApp(cfg);
+      O.db = app.database();
+    }
+  }catch(e){ console.error(e); }
+  let id = store.get("uid", null);
+  if(!id){ id = "p" + Math.random().toString(36).slice(2,10) + Date.now().toString(36); store.set("uid", id); }
+  O.me = id; O.ready = true;
+}
+function errMsg(e){
+  const c = String((e && (e.code || e.message)) || "");
+  if(/permission/i.test(c)) return "La base de données refuse l'accès. Vérifie les règles dans la console Firebase.";
+  return "Problème de connexion. Réessaie dans un instant.";
+}
+function buildDeck(mode, spicy, rounds){
+  const own = (S.custom[mode]||"").split("\n").map(s=>s.trim().replace(/^(qui est le plus susceptible de|qui a déjà)\s*/i,"").replace(/\s*\?$/,"")).filter(Boolean).map(t=>({t, own:true}));
+  let pool = poolFor(mode, spicy, rounds);
+  return shuffle(own.concat(shuffle(pool)).slice(0, Math.max(rounds, own.length))).slice(0, rounds);
+}
+const pids = () => Object.keys(O.players).sort((a,b)=>(O.players[a].joinedAt||0)-(O.players[b].joinedAt||0));
+const nameOf = id => (O.players[id] && O.players[id].name) || (O.room && O.room.names && O.room.names[id]) || "Joueur parti";
+const namesMap = () => Object.assign({}, (O.room && O.room.names) || {}, Object.fromEntries(pids().map(id=>[id, O.players[id].name])));
+const curVotes = () => Object.entries(O.votes).filter(([id,v]) => O.players[id] && v.round===O.room.i && v.game===O.room.game);
+const roomRef = () => O.db.ref("rooms/"+O.code);
+const saveRoom = patch => roomRef().update(patch);
+
+function openOnline(){
+  initCaps();
+  S.screen="online-entry"; O.err=""; render();
+}
+
+function renderOnlineEntry(){
+  const ok = O.ready && O.db && O.me;
+  const saved = store.get("room", null);
+  app.innerHTML = `
+    <div class="topbar"><button class="btn ghost" id="back">Retour</button><span class="label">Jeu en ligne</span></div>
+    <h1 style="font-size:clamp(36px,10vw,56px);font-weight:800;letter-spacing:-.02em">Chacun sur son appareil</h1>
+    <p class="hint">Téléphone ou PC : chacun ouvre ce même lien, entre le code de la partie et vote en secret. Aucun compte nécessaire.</p>
+    ${!ok ? `
+      <div class="panel"><p class="hint">Le jeu en ligne n'est pas encore branché à sa base de données. La personne qui héberge le site doit remplir le fichier config.js (voir le guide). En attendant, tu peux jouer sur un seul appareil.</p></div>` : `
+      <section class="panel">
+        <label class="label" for="pseudo">Ton prénom</label>
+        <input id="pseudo" class="field" maxlength="20" value="${esc(store.get("pseudo",""))}" placeholder="Ex. Léa" autocomplete="off">
+      </section>
+      ${saved ? `<button class="btn ghost" id="resume">Reprendre la partie ${esc(saved)}</button>` : ""}
+      <section class="panel">
+        <div class="label">Rejoindre une partie</div>
+        <form class="addrow" id="joinForm">
+          <input id="codeInput" maxlength="4" placeholder="CODE" autocomplete="off" aria-label="Code de la partie" style="text-transform:uppercase;letter-spacing:.25em;font-weight:700">
+          <button class="btn" type="submit">Rejoindre</button>
+        </form>
+      </section>
+      <button class="btn big" id="create" style="background:var(--sus);color:var(--sus-ink)">Créer une nouvelle partie</button>
+    `}
+    ${O.err ? `<p class="err">${esc(O.err)}</p>` : ""}
+  `;
+  document.getElementById("back").onclick = () => { S.screen="home"; render(); };
+  if(!ok) return;
+  document.getElementById("create").onclick = createRoom;
+  document.getElementById("joinForm").addEventListener("submit", e => { e.preventDefault(); joinRoom(document.getElementById("codeInput").value); });
+  const r = document.getElementById("resume"); if(r) r.onclick = () => joinRoom(saved);
+}
+function getPseudo(){
+  const v = (document.getElementById("pseudo").value||"").trim();
+  if(!v){ O.err = "Entre ton prénom d'abord."; renderOnlineEntry(); return null; }
+  store.set("pseudo", v); return v;
+}
+async function createRoom(){
+  const name = getPseudo(); if(!name || O.busy) return;
+  O.busy = true; O.err = "";
+  try{
+    let code = null;
+    for(let t=0; t<8 && !code; t++){
+      const c = Array.from({length:4}, () => ALPH[Math.floor(Math.random()*ALPH.length)]).join("");
+      const res = await O.db.ref("rooms/"+c).transaction(cur => cur === null
+        ? { host:O.me, phase:"lobby", mode:"sus", level:"soft", rounds:20, i:0, createdAt:Date.now() }
+        : undefined);
+      if(res.committed) code = c;
+    }
+    if(!code) throw new Error("no code");
+    await enterRoom(code, name);
+  }catch(e){ O.err = errMsg(e); renderOnlineEntry(); }
+  O.busy = false;
+}
+async function joinRoom(raw){
+  const code = String(raw||"").trim().toUpperCase();
+  if(!/^[A-Z]{4}$/.test(code)){ O.err = "Le code fait 4 lettres."; renderOnlineEntry(); return; }
+  const name = getPseudo(); if(!name || O.busy) return;
+  O.busy = true; O.err = "";
+  try{
+    const s = await O.db.ref("rooms/"+code+"/host").once("value");
+    if(!s.exists()){ O.err = "Aucune partie avec ce code."; store.set("room", null); renderOnlineEntry(); O.busy=false; return; }
+    await enterRoom(code, name);
+  }catch(e){ O.err = errMsg(e); renderOnlineEntry(); }
+  O.busy = false;
+}
+async function enterRoom(code, name){
+  const ref = O.db.ref(`rooms/${code}/players/${O.me}`);
+  const prev = await ref.once("value");
+  await ref.set({ name, joinedAt: (prev.exists() && prev.val().joinedAt) || Date.now() });
+  O.code = code; store.set("room", code);
+  subscribe(code);
+  S.screen = "online"; O.key = ""; renderOnline();
+}
+function unsubAll(){ if(O.off){ O.off(); O.off = null; } clearTimeout(O.timer); }
+function subscribe(code){
+  unsubAll();
+  Object.assign(O, { room:null, loaded:false, stale:false, err:"" });
+  O.timer = setTimeout(() => { O.stale = true; if(S.screen==="online") renderOnline(); }, 10000);
+  const ref = O.db.ref("rooms/"+code);
+  const cb = s => { clearTimeout(O.timer); O.stale = false; O.loaded = true; O.room = s.val(); changed(); };
+  const fail = e => { O.err = errMsg(e); if(S.screen==="online") renderOnline(); };
+  ref.on("value", cb, fail);
+  O.off = () => ref.off("value", cb);
+}
+function changed(){
+  if(S.screen!=="online") return;
+  if(O.room){ setAccent(O.room.mode || "sus"); autoReveal(); }
+  renderOnline();
+}
+function autoReveal(){
+  const R = O.room;
+  if(R.host!==O.me || R.phase!=="vote" || O.revealing) return;
+  const n = pids().length;
+  if(n>0 && curVotes().length >= n) reveal();
+}
+async function reveal(){
+  const R = O.room;
+  if(O.revealing || R.phase!=="vote") return;
+  O.revealing = true;
+  const votes = curVotes();
+  const scores = Object.assign({}, R.scores);
+  pids().forEach(id => { if(scores[id]==null) scores[id] = 0; });
+  let result;
+  if(R.mode==="sus"){
+    const tally = {};
+    votes.forEach(([, v]) => { if(O.players[v.pick]) tally[v.pick] = (tally[v.pick]||0) + 1; });
+    const max = Math.max(0, ...Object.values(tally));
+    const winners = max>0 ? Object.keys(tally).filter(k => tally[k]===max) : [];
+    winners.forEach(w => scores[w] = (scores[w]||0) + 1);
+    result = { tally, winners, voters: votes.length };
+  } else {
+    const yes = votes.filter(([, v]) => v.yes).map(([id]) => id);
+    const no = votes.filter(([, v]) => !v.yes).map(([id]) => id);
+    yes.forEach(y => scores[y] = (scores[y]||0) + 1);
+    result = { yes, no, none: !yes.length };
+  }
+  try{ await saveRoom({ phase:"reveal", scores, result, names:namesMap() }); }catch(e){ O.err = errMsg(e); renderOnline(); }
+  O.revealing = false;
+}
+async function hostDo(fn){
+  if(O.busy) return; O.busy = true;
+  try{ await fn(); }catch(e){ O.err = errMsg(e); renderOnline(); }
+  O.busy = false;
+}
+const startOnline = () => hostDo(() => {
+  const R = O.room;
+  return saveRoom({ phase:"vote", deck: buildDeck(R.mode||"sus", R.level||"soft", R.rounds||20), i:0, result:null, game: Date.now(), votes:null,
+    scores: Object.fromEntries(pids().map(id => [id, 0])), names: namesMap() });
+});
+const nextOnline = () => hostDo(() => {
+  const R = O.room;
+  return R.i >= (R.deck||[]).length-1 ? saveRoom({ phase:"end", result:null }) : saveRoom({ phase:"vote", i:R.i+1, result:null });
+});
+const restartOnline = () => hostDo(() => saveRoom({ phase:"lobby", deck:null, i:0, scores:null, result:null, votes:null }));
+async function castVote(payload){
+  if(O.busy) return; O.busy = true;
+  try{ await O.db.ref(`rooms/${O.code}/votes/${O.me}`).set(Object.assign({ round:O.room.i, game:O.room.game }, payload)); }
+  catch(e){ O.err = errMsg(e); }
+  O.busy = false; renderOnline();
+}
+async function leaveRoom(){
+  try{
+    if(O.room && O.room.host===O.me){
+      const other = pids().find(id => id!==O.me);
+      if(other) await saveRoom({ host: other });
+    }
+    await O.db.ref(`rooms/${O.code}/players/${O.me}`).remove();
+  }catch(e){}
+  unsubAll(); O.code = null; O.room = null; store.set("room", null);
+  S.screen = "home"; render();
+}
+
+function renderOnline(){
+  const R = O.room;
+  const errHtml = O.err ? `<p class="err">${esc(O.err)}</p>` : "";
+  const top = right => `<div class="topbar"><button class="btn ghost" id="leave">Quitter</button><span class="progress">${right}</span></div>`;
+  const bindLeave = () => { document.getElementById("leave").onclick = leaveRoom; };
+
+  if(!R){
+    app.innerHTML = `${top("Partie "+esc(O.code||""))}
+      <p class="instr">${O.loaded ? "Cette partie n'existe plus." : O.stale ? "Impossible de joindre la partie pour l'instant. Vérifie ta connexion." : "Connexion à la partie…"}</p>${errHtml}`;
+    bindLeave(); return;
+  }
+  const isHost = R.host===O.me, ids = pids(), M = MODES[R.mode];
+  const key = R.phase + "-" + R.i;
+  if(key!==O.key){ O.key = key; window.scrollTo(0,0); }
+
+  if(O.loaded && !O.players[O.me]){
+    app.innerHTML = `${top("Partie "+esc(O.code))}
+      <div class="panel"><p class="hint">Tu ne fais plus partie de cette partie.</p><button class="btn" id="rejoin">Revenir dans la partie</button></div>${errHtml}`;
+    bindLeave();
+    document.getElementById("rejoin").onclick = () => enterRoom(O.code, store.get("pseudo","Joueur")).catch(e => { O.err = errMsg(e); renderOnline(); });
+    return;
+  }
+  const stale = O.stale ? `<p class="hint" style="text-align:center">Connexion lente : l'affichage n'est peut-être pas à jour.</p>` : "";
+
+  if(R.phase==="lobby"){
+    const dis = isHost ? "" : "disabled";
+    app.innerHTML = `
+      ${top(isHost ? "Tu es l'hôte" : "Salle d'attente")}
+      <section class="panel" style="align-items:center;text-align:center">
+        <span class="label">Code de la partie</span>
+        <div class="code">${esc(O.code)}</div>
+        <p class="hint">Tes amis ouvrent ce même lien, cliquent sur « Jouer en ligne » et entrent ce code.</p>
+      </section>
+      <section class="panel">
+        <div class="label">Joueurs connectés · ${ids.length}</div>
+        <div class="plist">
+          ${ids.map(id => `<div class="prow"><span>${esc(nameOf(id))}${id===O.me ? '<span class="tagme">toi</span>' : ""}${id===R.host ? '<span class="tagme">hôte</span>' : ""}</span>
+            ${isHost && id!==O.me ? `<button class="btn ghost small" data-kick="${esc(id)}">Retirer</button>` : ""}</div>`).join("")}
+        </div>
+      </section>
+      <section class="panel">
+        <div class="opts">
+          <div class="opt"><span class="label">Mode</span>
+            <div class="seg" role="group" aria-label="Mode">
+              <button type="button" data-omode="sus" aria-pressed="${R.mode==="sus"}" ${dis}>Plus susceptible</button>
+              <button type="button" data-omode="deja" aria-pressed="${R.mode==="deja"}" ${dis}>Qui a déjà</button>
+            </div></div>
+          <div class="opt"><span class="label">Questions</span>
+            <div class="seg" role="group" aria-label="Nombre de questions">
+              ${[10,20,40,80].map(n => `<button type="button" data-orounds="${n}" aria-pressed="${R.rounds===n}" ${dis}>${n}</button>`).join("")}
+            </div></div>
+          <div class="opt"><span class="label">Ambiance</span>
+            <div class="seg" role="group" aria-label="Ambiance">
+              ${LEVELS.map(([k,l]) => `<button type="button" data-olevel="${k}" aria-pressed="${(R.level||"soft")===k}" ${dis}>${l}</button>`).join("")}
+            </div></div>
+        </div>
+      </section>
+      ${isHost ? `<button class="btn accent big" id="start" ${ids.length<2 ? "disabled" : ""}>Lancer la partie</button>
+        ${ids.length<2 ? `<p class="hint" style="text-align:center">Il faut au moins 2 joueurs connectés.</p>` : ""}`
+        : `<p class="instr">L'hôte va lancer la partie.</p>`}
+      ${stale}${errHtml}`;
+    bindLeave();
+    if(isHost){
+      document.getElementById("start").onclick = startOnline;
+      app.querySelectorAll("[data-omode]").forEach(b => b.onclick = () => hostDo(() => saveRoom({ mode:b.dataset.omode })));
+      app.querySelectorAll("[data-orounds]").forEach(b => b.onclick = () => hostDo(() => saveRoom({ rounds:+b.dataset.orounds })));
+      app.querySelectorAll("[data-olevel]").forEach(b => b.onclick = () => hostDo(() => saveRoom({ level:b.dataset.olevel })));
+      app.querySelectorAll("[data-kick]").forEach(b => b.onclick = () => O.db.ref(`rooms/${O.code}/players/${b.dataset.kick}`).remove().catch(e => { O.err = errMsg(e); renderOnline(); }));
+    }
+    return;
+  }
+
+  if(R.phase==="end"){
+    const ranked = Object.entries(R.scores||{}).sort((a,b) => b[1]-a[1]);
+    const topScore = ranked.length ? ranked[0][1] : 0;
+    const winners = ranked.filter(r => r[1]===topScore && topScore>0).map(r => nameOf(r[0]));
+    const crown = !winners.length ? "Personne n'a marqué. Suspect."
+      : R.mode==="sus" ? `${winners.map(esc).join(" et ")} ${winners.length>1 ? "sont" : "est"} officiellement le plus susceptible de tout.`
+      : `${winners.map(esc).join(" et ")} ${winners.length>1 ? "ont" : "a"} le passé le plus chargé du groupe.`;
+    let rank = 0, prev = null;
+    app.innerHTML = `
+      ${top(M.name + " · " + R.deck.length + " questions")}
+      <h1 style="font-size:clamp(36px,10vw,56px);font-weight:800;letter-spacing:-.02em">${M.endTitle}</h1>
+      <p class="crown">${crown}</p>
+      <div class="podium">
+        ${ranked.map(([id,s], idx) => { if(s!==prev){ rank = idx+1; prev = s; }
+          return `<div class="row ${s===topScore && topScore>0 ? "first" : ""}"><span class="rk">${rank}</span><span class="nm">${esc(nameOf(id))}${id===O.me ? " (toi)" : ""}</span><span class="sc">${s} pt${s>1 ? "s" : ""}</span></div>`; }).join("")}
+      </div>
+      ${isHost ? `<button class="btn accent big" id="again">Nouvelle partie avec la même bande</button>` : `<p class="instr">L'hôte peut relancer une partie.</p>`}
+      ${errHtml}`;
+    bindLeave();
+    if(isHost) document.getElementById("again").onclick = restartOnline;
+    return;
+  }
+
+  const card = R.deck[R.i] || { t:"…" };
+  const pct = (R.i / R.deck.length) * 100;
+  const head = `
+    ${top(`Question ${R.i+1} / ${R.deck.length}`)}
+    <div class="bar" aria-hidden="true"><i style="width:${pct}%"></i></div>
+    <article class="card" aria-live="polite">
+      ${card.lvl ? `<span class="spicy">${card.lvl==="hard" ? "Hard" : "Modéré"}</span>` : card.own ? `<span class="spicy">Question maison</span>` : ""}
+      <div class="lead">${M.lead}</div>
+      <div class="q">${esc(card.t)} ?</div>
+    </article>`;
+
+  if(R.phase==="vote"){
+    const votes = curVotes(), mv = O.votes[O.me], mine = mv && mv.round===R.i && mv.game===R.game ? mv : null;
+    const votedSet = new Set(votes.map(v => v[0]));
+    app.innerHTML = `
+      ${head}
+      ${R.mode==="sus" ? `
+        <p class="instr">${mine ? "Vote enregistré. Tu peux encore changer d'avis." : "Vote en secret : touche le joueur de ton choix."}</p>
+        <div class="players">
+          ${ids.map(id => `<button class="pbtn" data-vote="${esc(id)}" aria-pressed="${!!(mine && mine.pick===id)}">${esc(nameOf(id))}<small>${id===O.me ? "toi · " : ""}${(R.scores && R.scores[id]) || 0} pt${((R.scores && R.scores[id]) || 0)>1 ? "s" : ""}</small></button>`).join("")}
+        </div>` : `
+        <p class="instr">${mine ? "Réponse enregistrée. Tu peux encore changer d'avis." : "Réponds en secret. Pas de mensonges."}</p>
+        <div class="yesno">
+          <button class="pbtn" data-yes="1" aria-pressed="${!!(mine && mine.yes)}">Oui, déjà</button>
+          <button class="pbtn" data-yes="0" aria-pressed="${!!(mine && mine.yes===false)}">Jamais</button>
+        </div>`}
+      <p class="instr"><strong>${votes.length} / ${ids.length}</strong> ont répondu</p>
+      <div class="voted">${ids.map(id => `<span class="${votedSet.has(id) ? "ok" : ""}">${esc(nameOf(id))}</span>`).join("")}</div>
+      ${isHost ? `<div class="actions"><button class="btn ghost" id="revealNow">Révéler sans attendre</button></div>` : ""}
+      ${stale}${errHtml}`;
+    bindLeave();
+    app.querySelectorAll("[data-vote]").forEach(b => b.onclick = () => castVote({ pick:b.dataset.vote }));
+    app.querySelectorAll("[data-yes]").forEach(b => b.onclick = () => castVote({ yes:b.dataset.yes==="1" }));
+    const rv = document.getElementById("revealNow"); if(rv) rv.onclick = reveal;
+    return;
+  }
+
+  // reveal
+  const res = R.result || {};
+  let body;
+  if(R.mode==="sus"){
+    const w = res.winners || [];
+    const rows = Object.entries(res.tally || {}).sort((a,b) => b[1]-a[1]);
+    const total = res.voters || 1;
+    body = `
+      <div class="result"><div class="big">${w.length ? w.map(id => esc(nameOf(id))).join(", ") : "Personne"}</div>
+        <p class="instr">${w.length ? (w.length>1 ? "Égalité ! +1 point chacun." : "a été désigné par le groupe. +1 point.") : "Aucun vote."}</p></div>
+      <div class="panel tally">
+        ${rows.map(([id,n]) => `<div class="trow"><span>${esc(nameOf(id))}</span><span class="n">${n} vote${n>1 ? "s" : ""}</span><span class="tb"><i style="width:${Math.round(n/total*100)}%"></i></span></div>`).join("") || `<p class="hint">Personne n'a voté.</p>`}
+      </div>`;
+  } else {
+    const yes = res.yes || [], no = res.no || [];
+    body = `
+      <div class="result"><div class="big">${!yes.length ? "Personne" : yes.length===ids.length && ids.length>1 ? "Tout le monde" : yes.map(id => esc(nameOf(id))).join(", ")}</div>
+        <p class="instr">${!yes.length ? "Des anges, ou des menteurs." : yes.length>1 ? "l'ont déjà fait. +1 point chacun." : "l'a déjà fait. +1 point."}</p></div>
+      ${no.length ? `<p class="hint" style="text-align:center">Jamais : ${no.map(id => esc(nameOf(id))).join(", ")}</p>` : ""}`;
+  }
+  const ranked = Object.entries(R.scores||{}).sort((a,b) => b[1]-a[1]);
+  const last = R.i >= R.deck.length-1;
+  app.innerHTML = `
+    ${head}
+    ${body}
+    <div class="podium">
+      ${ranked.map(([id,s]) => `<div class="row"><span class="rk">·</span><span class="nm">${esc(nameOf(id))}${id===O.me ? " (toi)" : ""}</span><span class="sc">${s} pt${s>1 ? "s" : ""}</span></div>`).join("")}
+    </div>
+    ${isHost ? `<button class="btn accent big" id="nextQ">${last ? "Voir le classement" : "Question suivante"}</button>` : `<p class="instr">L'hôte passe à la suite…</p>`}
+    ${stale}${errHtml}`;
+  bindLeave();
+  if(isHost) document.getElementById("nextQ").onclick = nextOnline;
+}
+
+function render(){
+  if(S.screen==="home") renderHome();
+  else if(S.screen==="play") renderPlay();
+  else if(S.screen==="online-entry") renderOnlineEntry();
+  else if(S.screen==="online"){ renderOnline(); return; }
+  else renderEnd();
+  window.scrollTo(0,0);
+}
+initCaps();
+render();
+</script>
+
+</body>
+</html>
