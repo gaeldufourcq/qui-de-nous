@@ -19,6 +19,8 @@
   --sus-ink:#2a0d05;
   --deja:#ffc93c;       /* mode "qui a déjà" : jaune néon chaud */
   --deja-ink:#2b1f00;
+  --av:#5fe0b5;         /* mode "action ou vérité" : menthe */
+  --av-ink:#05271c;
   --accent:var(--sus);
   --accent-ink:var(--sus-ink);
   --display:"Bricolage Grotesque", "Arial Black", system-ui, sans-serif;
@@ -62,7 +64,8 @@ h1,h2,h3{font-family:var(--display);margin:0;text-wrap:balance;line-height:1.02}
 .chip button:hover{background:var(--line);color:var(--ink)}
 .hint{font-size:14px;color:var(--muted);margin:0}
 
-.modes{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.modes{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:12px}
+.mode.av{background:var(--av);color:var(--av-ink)}
 @media (max-width:440px){.modes{grid-template-columns:1fr}}
 .mode{border-radius:20px;padding:18px;text-align:left;display:flex;flex-direction:column;gap:10px;min-height:170px;justify-content:space-between;transition:transform .15s ease}
 .mode:hover:not(:disabled){transform:translateY(-3px) rotate(-.6deg)}
@@ -1204,6 +1207,411 @@ function poolFor(mode, level){
   const old = list.filter(t => rank.has(t)).sort((a,b) => rank.get(a)-rank.get(b));
   return fresh.concat(old).map(t => lvl ? {t, lvl} : {t});
 }
+/* ================= Action ou vérité =================
+   v = vérités, a = actions. {joueur} est remplacé par le prénom d'un autre joueur tiré au hasard. */
+const AV = {
+soft: { v: L(`
+Quel est ton plus gros mensonge à tes parents ?
+Quelle est la chose la plus gênante qui te soit arrivée en public ?
+Quel est ton pire souvenir de vacances ?
+Qui dans ce groupe appellerais-tu en premier si tu avais un problème ?
+Quelle est ta plus grande peur ?
+Quel est ton talent caché ?
+Quelle est la chose la plus bête que tu aies achetée ?
+Quel est le dernier mensonge que tu as dit ?
+Quelle série regardes-tu en cachette ?
+Quelle est la chanson un peu honteuse que tu adores ?
+Si tu pouvais échanger ta vie avec quelqu'un ici, ce serait qui ?
+Quel est le pire cadeau que tu aies reçu ?
+Quelle est ta pire habitude ?
+Quel plat adores-tu alors que tout le monde le trouve bizarre ?
+Quel est le surnom le plus gênant qu'on t'ait donné ?
+Qu'est-ce qui t'agace le plus chez {joueur} ?
+Qu'est-ce que tu admires le plus chez {joueur} ?
+Quand as-tu pleuré pour la dernière fois, et pourquoi ?
+Quel est ton plus grand regret ?
+Quel métier voulais-tu faire quand tu étais petit ?
+Quelle célébrité aimerais-tu rencontrer ?
+Quel est le rêve le plus bizarre dont tu te souviens ?
+Quelle est ta pire note à l'école ?
+As-tu déjà triché à un examen ? Raconte.
+Quelle est la chose la plus folle que tu aies faite pour de l'argent ?
+Quel est ton pire moment de honte au travail ou à l'école ?
+Quelle appli utilises-tu le plus ? Montre ton temps d'écran.
+Quelle est la dernière chose que tu as cherchée sur Internet ?
+Qui ici a les pires goûts musicaux ?
+Qui ici serait le pire colocataire ?
+Qui ici est le plus drôle ?
+Quelle est la pire chose que tu aies mangée ?
+Quel super-pouvoir choisirais-tu, et pourquoi ?
+Quelle est ta plus grosse bêtise d'enfant ?
+As-tu déjà menti à quelqu'un de ce groupe ?
+Quel secret as-tu gardé le plus longtemps ?
+Quelle est l'excuse la plus nulle que tu aies donnée ?
+Quel film t'a fait le plus pleurer ?
+Quel objet sauverais-tu en premier en cas d'incendie ?
+De quoi es-tu le plus fier ?
+Quel défaut détestes-tu le plus chez les autres ?
+Quelle règle as-tu le plus souvent enfreinte ?
+As-tu déjà été jaloux de quelqu'un ici ?
+Quel est ton plus grand complexe ?
+Quel est ton plaisir coupable ?
+Quelle est ta pire coupe de cheveux ?
+Quel est le dernier message que tu as envoyé ?
+Quel est le pire job que tu aies fait ?
+Avec qui ici partirais-tu sur une île déserte ?
+Qui ici te connaît le mieux ?
+Qu'est-ce que tu n'oserais jamais dire à tes parents ?
+Quelle a été ta pire dispute avec un ami ?
+Quel est ton plus grand échec ?
+Que ferais-tu avec un million d'euros ?
+Quelle est la chose la plus enfantine que tu fais encore ?
+Quel est ton pire souvenir de soirée ?
+Quelle est ton habitude la plus bizarre quand tu es seul ?
+Quelle a été ta première impression sur {joueur} ?
+Si tu devais supprimer une appli de ton téléphone pour toujours, laquelle ?
+Quel est le compliment qui t'a le plus marqué ?
+`), a: L(`
+Imite {joueur} pendant 30 secondes.
+Chante le refrain de la dernière chanson que tu as écoutée.
+Fais 15 pompes.
+Parle avec un accent jusqu'à ton prochain tour.
+Montre la dernière photo de ta galerie.
+Imite une célébrité. Les autres doivent deviner qui.
+Danse 30 secondes sans musique.
+Raconte une blague. Si personne ne rit, raconte-en une autre.
+Fais un compliment sincère à chaque joueur.
+Mime un film. Les autres ont une minute pour deviner.
+Tiens la position de la chaise contre un mur pendant 45 secondes.
+Fais une déclaration d'amour dramatique à un objet de la pièce.
+Chuchote jusqu'à ton prochain tour.
+Fais le cri d'un animal choisi par {joueur}.
+Récite l'alphabet à l'envers.
+Laisse {joueur} choisir ta photo de profil pour 24 heures.
+Fais un selfie avec ta grimace la plus moche et montre-le à tout le monde.
+Envoie « Tu me manques » au troisième contact de ta liste de messages.
+Chante « Joyeux anniversaire » comme un chanteur d'opéra.
+Fais 20 squats.
+Parle en rimes jusqu'à ton prochain tour.
+Raconte ta journée comme un commentateur sportif.
+Fais une pub de 30 secondes pour un objet près de toi.
+Garde les yeux fermés jusqu'à ton prochain tour.
+Dis trois fois très vite : « Les chaussettes de l'archiduchesse sont-elles sèches, archi-sèches ? »
+Fais la planche pendant 45 secondes.
+Laisse {joueur} écrire ta prochaine story.
+Montre ton historique de recherche des dernières 24 heures.
+Appelle un ami et chante-lui une chanson.
+Fais un tour de magie, même raté.
+Mime ton métier ou tes études sans parler.
+Parle comme un robot jusqu'à ton prochain tour.
+Lis à voix haute le dernier message que tu as reçu.
+Fais une chorégraphie TikTok.
+Décris {joueur} en trois mots seulement.
+Fais un discours de remerciement comme si tu venais de gagner un Oscar.
+Mange une cuillère d'un condiment choisi par le groupe.
+Tiens sur un pied jusqu'à ton prochain tour.
+Essaie de faire le poirier pendant 10 secondes.
+Raconte un souvenir d'enfance avec une voix de dessin animé.
+Envoie un emoji au hasard à ton dernier contact, sans explication.
+Échange un vêtement avec {joueur} jusqu'à la fin de la partie.
+Imite ton prof ou ton patron.
+Invente et chante une chanson sur {joueur}.
+Parle de toi à la troisième personne jusqu'à ton prochain tour.
+`) },
+mod: { v: L(`
+Quel est ton type physique ?
+Qui est ton crush en ce moment ?
+As-tu déjà eu un crush sur quelqu'un de ce groupe ?
+Quel a été ton pire rendez-vous amoureux ?
+Combien de personnes as-tu embrassées ?
+Quel est ton plus gros râteau ?
+As-tu déjà stalké un ex ? Jusqu'où es-tu allé ?
+Quel est le message le plus gênant que tu aies envoyé à un crush ?
+As-tu déjà menti sur une appli de rencontre ?
+Qu'est-ce qui te fait craquer immédiatement chez quelqu'un ?
+Qu'est-ce qui te fait fuir immédiatement chez quelqu'un ?
+Avec qui ici sortirais-tu si tu y étais obligé ?
+Quel est ton pire souvenir de bisou ?
+As-tu déjà été trompé ? Comment l'as-tu appris ?
+As-tu déjà trompé quelqu'un ?
+Quelle est la pire chose que tu aies faite en étant ivre ?
+Quelle est la rumeur la plus fausse qu'on ait lancée sur toi ?
+Quel est le secret que personne ici ne connaît ?
+As-tu déjà ghosté quelqu'un ? Pourquoi ?
+Quelle célébrité est ton crush absolu ?
+Qui ici a le plus de charme ?
+Qui ici embrasse le mieux, selon toi ?
+Raconte ton premier bisou.
+As-tu déjà eu des sentiments pour l'ex d'un ami ?
+Quelle est la chose la plus romantique qu'on ait faite pour toi ?
+As-tu déjà dit « je t'aime » sans le penser ?
+Combien de temps a duré ta relation la plus courte ?
+Quel est ton plus gros red flag ?
+Quel est le pire message que tu aies envoyé à 3 h du matin ?
+As-tu déjà eu un crush sur un prof ou un collègue ?
+As-tu déjà fouillé le téléphone de quelqu'un ?
+As-tu déjà été jaloux de l'ex de ton ou ta partenaire ?
+De qui as-tu rêvé en dernier ?
+Quelle est la chose la plus folle que tu aies faite par amour ?
+Combien de matchs as-tu sur les applis en ce moment ?
+As-tu déjà regretté un bisou ?
+Quelle partie de ton corps préfères-tu ?
+Dans quelle tenue te sens-tu irrésistible ?
+Qui ici as-tu déjà trouvé attirant ?
+Avec qui ici caserais-tu {joueur} ?
+Quelle est ta technique de drague ?
+As-tu déjà fait exprès de ne pas répondre à un crush pour te faire désirer ?
+As-tu déjà dragué quelqu'un pour obtenir quelque chose ?
+Quel est ton plus gros mensonge à un ex ?
+As-tu déjà eu une relation secrète ?
+Que dirait ton ex de toi ?
+As-tu déjà recontacté un ex pendant une soirée ?
+Quel est ton pire lendemain de soirée ?
+As-tu déjà embrassé deux personnes dans la même soirée ?
+Qui as-tu stalké en dernier sur les réseaux ?
+Qui ici as-tu déjà stalké sur les réseaux ?
+Préfères-tu être aimé ou désiré ?
+Quel est l'endroit le plus improbable où tu aies embrassé quelqu'un ?
+As-tu déjà fait semblant d'être amoureux ?
+Quelle est ta pire honte en soirée ?
+As-tu déjà eu un coup de foudre ?
+Raconte ton pire râteau en détail.
+Quel est le plus gros mensonge que tu aies dit pour séduire ?
+As-tu déjà été amoureux de deux personnes à la fois ?
+Quelle est la chose la plus mignonne que tu fais en couple ?
+`), a: L(`
+Montre ta dernière conversation avec ton crush.
+Fais ta meilleure technique de drague sur {joueur}.
+Masse les épaules de {joueur} pendant 30 secondes.
+Envoie « Je pense à toi » à ton ex ou à ton dernier crush.
+Montre tes derniers matchs sur une appli de rencontre.
+Fais une déclaration d'amour à {joueur}, les yeux dans les yeux.
+Laisse le groupe lire tes 5 derniers messages envoyés.
+Danse de façon sexy pendant 30 secondes.
+Fais un bisou sur la joue de {joueur}.
+Fais un câlin de 20 secondes à {joueur}.
+Appelle ton ex et demande-lui comment ça va.
+Poste une story avec un texte choisi par le groupe.
+Échange ton téléphone avec {joueur} pendant 2 minutes.
+Pose ta tête sur l'épaule de {joueur} jusqu'à ton prochain tour.
+Fais un clin d'œil charmeur à chaque joueur.
+Montre comment tu dragues en soirée.
+Montre la photo la plus sexy de ta galerie.
+Laisse {joueur} choisir un message à envoyer à ton crush.
+Murmure quelque chose de mignon à l'oreille de {joueur}.
+Fais un défilé de mode sexy dans la pièce.
+Écris un poème d'amour pour {joueur} et lis-le à voix haute.
+Dis à chaque joueur ce que tu trouves attirant chez lui.
+Danse un slow avec {joueur} pendant une chanson.
+Envoie un vocal de 10 secondes avec ta voix la plus sexy à {joueur}.
+Mime ton premier bisou.
+Laisse {joueur} te coiffer à sa façon.
+Imite ton ex.
+Montre la dernière photo que tu as envoyée.
+Tiens la main de {joueur} jusqu'à ton prochain tour.
+Retire une chaussette avec les dents.
+Bois un verre cul sec (de l'eau, ça compte).
+Laisse le groupe choisir ta photo de profil pour une semaine.
+Fais un bisou esquimau à {joueur}.
+Raconte une anecdote de soirée que tu n'as jamais racontée.
+Envoie un compliment à la quatrième personne de ta liste de contacts.
+Assieds-toi sur les genoux de {joueur} pendant un tour.
+Prends une pose sexy de couverture de magazine.
+Fais ta tête la plus séductrice pendant que {joueur} te prend en photo.
+Laisse {joueur} fouiller ta galerie pendant 30 secondes.
+Échange ton haut avec {joueur} jusqu'à ton prochain tour.
+Chante une sérénade à {joueur}.
+Lis à voix haute le message le plus gênant que tu aies envoyé.
+Laisse {joueur} envoyer un message de son choix depuis ton téléphone (tu choisis à qui).
+Fais semblant de demander {joueur} en mariage.
+Raconte ton dernier rêve un peu coquin, version tout public.
+`) },
+hard: { v: L(`
+Quel est ton plus gros fantasme ?
+Quel est l'endroit le plus fou où tu aies fait l'amour ?
+Combien de partenaires as-tu eus ?
+Quelle est ta position préférée ?
+As-tu déjà fait un plan à trois ? Raconte.
+As-tu déjà simulé ? Avec qui ?
+Quel est ton pire souvenir au lit ?
+Quel est ton meilleur souvenir au lit ?
+As-tu déjà fantasmé sur quelqu'un de ce groupe ?
+Avec qui ici coucherais-tu si tu y étais obligé ?
+As-tu déjà envoyé des nudes ? À qui ?
+Quel est l'objet le plus coquin dans ta chambre ?
+As-tu déjà utilisé un sextoy ?
+Quelle est la chose la plus coquine que tu aies faite en public ?
+Quelle est ta zone la plus sensible ?
+As-tu déjà eu un coup d'un soir ? Raconte le meilleur.
+As-tu déjà couché avec quelqu'un le premier soir ?
+As-tu un fétichisme ? Lequel ?
+Qu'est-ce que tu n'as jamais osé demander au lit ?
+Préfères-tu dominer ou être dominé ?
+As-tu déjà été surpris en plein acte ?
+Quel âge avait ton partenaire le plus âgé ?
+Combien de temps a duré ta plus longue nuit ?
+As-tu déjà fait l'amour au travail ?
+Quelle note sur 10 donnes-tu au meilleur coup de ta vie ?
+As-tu déjà couché avec l'ex d'un ami ?
+Quelle est ta pire expérience sexuelle ?
+Quelle est la chose la plus bizarre qu'on t'ait demandée au lit ?
+As-tu déjà regardé un film X avec quelqu'un ?
+Quel genre de film X regardes-tu ?
+As-tu déjà fait du sexting ?
+As-tu déjà eu un plan cul régulier ?
+Qu'est-ce qui t'excite le plus ?
+As-tu déjà fait l'amour dans une voiture ?
+As-tu déjà couché avec quelqu'un sans connaître son prénom ?
+Où rêves-tu de faire l'amour ?
+As-tu déjà utilisé des menottes ou des liens ?
+Quand as-tu fait l'amour pour la dernière fois ?
+Quelle tenue de ton ou ta partenaire te rend fou ?
+Quel est ton record de fois en une nuit ?
+As-tu déjà été filmé pendant l'amour ?
+Quel jeu de rôle aimerais-tu essayer ?
+As-tu déjà trompé quelqu'un physiquement ?
+As-tu déjà couché avec quelqu'un pour te venger ?
+Quel est ton plus gros regret sexuel ?
+Quelle est la chose la plus coquine que tu aies faite en vacances ?
+Qui ici a l'air le plus doué au lit ?
+Qui ici a l'air sage au lit, mais ne l'est sûrement pas ?
+As-tu déjà fantasmé sur un prof ou un collègue ?
+Es-tu déjà allé dans un club libertin ou de strip-tease ?
+Quel est le compliment le plus coquin qu'on t'ait fait ?
+Quelle est la pire excuse que tu aies donnée pour éviter de coucher avec quelqu'un ?
+As-tu déjà couché avec quelqu'un de beaucoup plus jeune ou plus âgé que toi ?
+Lumière allumée ou éteinte ?
+Plutôt le matin ou le soir ?
+Quel sous-vêtement portes-tu en ce moment ?
+As-tu déjà envoyé une photo coquine à la mauvaise personne ?
+Quelle est la chose la plus osée que tu aies essayée au lit ?
+Décris ta nuit idéale en trois mots.
+Quel est le fantasme que tu n'avoueras jamais à ton ou ta partenaire ?
+`), a: L(`
+Retire un vêtement de ton choix.
+Fais un strip-tease de 30 secondes, en gardant tes sous-vêtements.
+Embrasse {joueur} dans le cou, avec son accord.
+Laisse {joueur} choisir où tu lui fais un bisou, en restant habillé.
+Fais une lap dance de 30 secondes à {joueur}.
+Mime ta position préférée avec un coussin.
+Envoie un message coquin à {joueur}.
+Embrasse {joueur} sur la bouche, avec son accord.
+Gémis de façon convaincante pendant 10 secondes.
+Montre ta photo la plus coquine, ou décris-la en détail.
+Laisse {joueur} te bander les yeux et devine quelle partie de son visage tu touches.
+Assieds-toi sur les genoux de {joueur} jusqu'à ton prochain tour.
+Échange un vêtement avec {joueur}, sur place.
+Fais un suçon à {joueur} à l'endroit de son choix, avec son accord.
+Mordille l'oreille de {joueur}.
+Murmure ton fantasme à l'oreille de {joueur}.
+Fais 10 secondes de pole dance contre une porte.
+Enlève une chaussette de {joueur} avec les dents.
+Reste en sous-vêtements jusqu'à ton prochain tour.
+Masse le dos de {joueur} de façon sensuelle pendant une minute.
+Laisse {joueur} te donner une fessée.
+Mime un orgasme pendant 10 secondes.
+Lis à voix haute un texte coquin écrit par le groupe.
+Envoie un vocal coquin à ton ou ta partenaire, ou à ton dernier crush.
+Fais un bisou sur le ventre de {joueur}.
+Danse collé-serré avec {joueur} pendant une chanson.
+Séduis {joueur} comme dans un mauvais film érotique.
+Montre ton sous-vêtement à tout le monde.
+Fais un bisou de 5 secondes à la personne de ton choix.
+Mets-toi à quatre pattes et miaule de façon sexy.
+Laisse {joueur} écrire un mot coquin sur ton bras.
+Fais un strip-tease à l'envers : remets tes vêtements de façon sexy.
+Raconte ta dernière fois en détail, sans donner de nom.
+Laisse le groupe choisir un vêtement que tu retires.
+Fais une déclaration coquine à {joueur} avec ta voix la plus sexy.
+Glisse un glaçon dans ton haut et garde-le jusqu'à ce qu'il fonde.
+Passe un glaçon de ta bouche à celle de {joueur}, avec son accord.
+Les yeux bandés, embrasse {joueur} là où on te guide (en restant habillé).
+Tiens un morceau de fruit entre tes dents et donne-le à {joueur} sans les mains.
+Fais un câlin de 30 secondes à {joueur}, torse nu.
+Imite la tête que tu fais pendant l'amour.
+Fais 10 pompes au-dessus de {joueur}.
+Raconte ton fantasme le plus inavouable.
+Laisse {joueur} te mettre du rouge à lèvres et embrasse la joue de la personne de ton choix.
+Fais deviner ta position préférée en la mimant seul.
+`) }
+};
+// Les questions d'Action ou vérité pas encore posées passent d'abord.
+function poolAV(type, level){
+  const list = AV[level][type];
+  const seen = store.get("seen_av", []);
+  const rank = new Map(seen.map((t,i) => [t,i]));
+  return shuffle(list.filter(t => !rank.has(t))).concat(list.filter(t => rank.has(t)).sort((a,b) => rank.get(a)-rank.get(b)));
+}
+function markSeenAV(t){
+  const s = store.get("seen_av", []).filter(x => x!==t); s.push(t);
+  store.set("seen_av", s.slice(-3000));
+}
+const fillPlayer = (t, others) => t.replace(/\{joueur\}/g, () => others.length ? others[Math.floor(Math.random()*others.length)] : "quelqu'un");
+function drawAV(lists, idx, type){
+  const l = lists[type] || [];
+  const t = l.length ? l[(idx[type]||0) % l.length] : "…";
+  idx[type] = (idx[type]||0) + 1;
+  markSeenAV(t);
+  return t;
+}
+const AV_LEVEL_TAG = { mod:"Modéré", hard:"Hard" };
+function avCardHtml(card, who, level){
+  return `<article class="card" aria-live="polite">
+      ${AV_LEVEL_TAG[level] ? `<span class="spicy">${AV_LEVEL_TAG[level]}</span>` : ""}
+      <div class="lead">${esc(who)} · ${card.type==="v" ? "Vérité" : "Action"}</div>
+      <div class="q">${esc(card.t)}</div>
+    </article>`;
+}
+function avTurnHtml(who, isMe){
+  return `<article class="card"><div class="lead">Au tour de</div><div class="q">${esc(who)}${isMe ? " (toi)" : ""}</div></article>`;
+}
+function avScoresHtml(entries){
+  return `<div class="voted">${entries.map(([name,s]) => `<span>${esc(name)} · ${s} pt${s>1 ? "s" : ""}</span>`).join("")}</div>`;
+}
+
+function startAV(){
+  S.game = { mode:"av", level:S.level, rounds:S.rounds, i:0, scores:Object.fromEntries(S.players.map(p=>[p,0])),
+    order: shuffle(S.players), lists:{ v:poolAV("v", S.level), a:poolAV("a", S.level) }, idx:{v:0,a:0}, card:null };
+  setAccent("av");
+  S.screen="play"; render();
+}
+function renderAVLocal(){
+  const g = S.game, who = g.order[g.i % g.order.length];
+  app.innerHTML = `
+    <div class="topbar"><button class="btn ghost" id="quit">Quitter</button><span class="progress">Tour ${g.i+1} / ${g.rounds}</span></div>
+    <div class="bar" aria-hidden="true"><i style="width:${g.i/g.rounds*100}%"></i></div>
+    ${g.card ? `
+      ${avCardHtml(g.card, who, g.level)}
+      <p class="instr">Le groupe juge : défi relevé ou pas ?</p>
+      <div class="actions">
+        <button class="btn ghost" id="refuse">Refusé</button>
+        <button class="btn accent" id="done">${g.card.type==="v" ? "A répondu" : "Défi relevé"} · +1</button>
+      </div>` : `
+      ${avTurnHtml(who, false)}
+      <p class="instr">Action ou vérité ?</p>
+      <div class="yesno">
+        <button class="pbtn" data-pick="v">Vérité</button>
+        <button class="pbtn" data-pick="a">Action</button>
+      </div>
+      <div class="actions"><button class="btn ghost" id="skip">Passer son tour</button></div>`}
+    ${avScoresHtml(g.order.map(p => [p, g.scores[p]]))}
+  `;
+  document.getElementById("quit").onclick = () => { S.screen="home"; render(); };
+  app.querySelectorAll("[data-pick]").forEach(b => b.onclick = () => {
+    const type = b.dataset.pick;
+    g.card = { type, t: fillPlayer(drawAV(g.lists, g.idx, type), S.players.filter(p => p!==who)) };
+    renderAVLocal();
+  });
+  const done = document.getElementById("done"); if(done) done.onclick = () => { g.scores[who]++; nextAV(); };
+  const ref = document.getElementById("refuse"); if(ref) ref.onclick = nextAV;
+  const sk = document.getElementById("skip"); if(sk) sk.onclick = nextAV;
+}
+function nextAV(){
+  const g = S.game; g.card = null;
+  if(g.i >= g.rounds-1) S.screen="end"; else g.i++;
+  render();
+}
+
 function markSeen(mode, deck){
   const used = new Set(deck.filter(d => !d.own).map(d => d.t));
   const seen = store.get("seen_"+mode, []).filter(t => !used.has(t)).concat([...used]);
@@ -1215,7 +1623,9 @@ const MODES = {
         endTitle:"Le classement des suspects"},
   deja: {name:"Qui a déjà", lead:"Qui a déjà…", accent:"var(--deja)", ink:"var(--deja-ink)",
          instr:"Touchez tous ceux qui l'ont déjà fait. Pas de mensonges.",
-         endTitle:"Le classement des aveux"}
+         endTitle:"Le classement des aveux"},
+  av: {name:"Action ou vérité", lead:"", accent:"var(--av)", ink:"var(--av-ink)",
+       instr:"", endTitle:"Les plus courageux"}
 };
 
 /* ================= État ================= */
@@ -1303,6 +1713,11 @@ function renderHome(){
         <div><h2>Qui a déjà…</h2></div>
         <p>Chacun avoue ce qu'il a fait. Chaque aveu rapporte un point.</p>
       </button>
+      <button class="mode av" data-mode="av" ${enough?"":"disabled"}>
+        <span class="tag">Mode 3 · chacun son tour</span>
+        <div><h2>Action ou vérité</h2></div>
+        <p>À ton tour : action ou vérité ? Chaque défi relevé rapporte un point.</p>
+      </button>
     </section>
   `;
   document.getElementById("goOnline").onclick = openOnline;
@@ -1324,6 +1739,7 @@ function renderHome(){
 
 /* ================= Partie ================= */
 function startGame(mode){
+  if(mode==="av"){ startAV(); return; }
   const own = S.custom[mode].split("\n").map(s=>s.trim().replace(/^(qui est le plus susceptible de|qui a déjà)\s*/i,"").replace(/\s*\?$/,"")).filter(Boolean)
     .map(t=>({t, own:true}));
   const deck = shuffle(own.concat(poolFor(mode, S.level)).slice(0, Math.max(S.rounds, own.length))).slice(0, S.rounds);
@@ -1338,6 +1754,7 @@ function setAccent(mode){
 }
 
 function renderPlay(){
+  if(S.game.mode==="av") return renderAVLocal();
   const g = S.game, M = MODES[g.mode], card = g.deck[g.i];
   const pct = (g.i/g.deck.length)*100;
   const revealed = g.revealed;
@@ -1459,10 +1876,11 @@ function renderEnd(){
   const winners = ranked.filter(r=>r[1]===top && top>0).map(r=>r[0]);
   const crown = !winners.length ? "Personne n'a marqué. Suspect."
     : g.mode==="sus" ? `${winners.map(esc).join(" et ")} ${winners.length>1?"sont":"est"} officiellement le plus susceptible de tout.`
+    : g.mode==="av" ? `${winners.map(esc).join(" et ")} ${winners.length>1?"ont":"a"} relevé le plus de défis.`
     : `${winners.map(esc).join(" et ")} ${winners.length>1?"ont":"a"} le passé le plus chargé du groupe.`;
   let rank = 0, prev = null;
   app.innerHTML = `
-    <div class="topbar"><span class="label">${M.name} · ${g.deck.length} questions</span></div>
+    <div class="topbar"><span class="label">${M.name} · ${g.mode==="av" ? g.rounds + " tours" : g.deck.length + " questions"}</span></div>
     <h1 style="font-size:clamp(36px,10vw,56px);font-weight:800;letter-spacing:-.02em">${M.endTitle}</h1>
     <p class="crown">${crown}</p>
     <div class="podium">
@@ -1475,7 +1893,7 @@ function renderEnd(){
     </div>
   `;
   document.getElementById("again").onclick = () => startGame(g.mode);
-  document.getElementById("other").onclick = () => startGame(g.mode==="sus" ? "deja" : "sus");
+  document.getElementById("other").onclick = () => startGame(g.mode==="sus" ? "deja" : g.mode==="deja" ? "av" : "sus");
   const home = document.createElement("button"); home.className="btn ghost"; home.textContent="Modifier les joueurs";
   home.onclick = () => { S.screen="home"; render(); };
   app.querySelector(".actions").appendChild(home);
@@ -1648,6 +2066,12 @@ async function hostDo(fn){
 }
 const startOnline = () => hostDo(() => {
   const R = O.room;
+  if(R.mode==="av"){
+    const lvl = R.level||"soft", n = R.rounds||20;
+    return saveRoom({ phase:"pick", i:0, card:null, result:null, game: Date.now(), votes:null, deck:null,
+      order: shuffle(pids()), lists:{ v:poolAV("v", lvl).slice(0, n), a:poolAV("a", lvl).slice(0, n) }, idx:{v:0, a:0},
+      scores: Object.fromEntries(pids().map(id => [id, 0])), names: namesMap() });
+  }
   return saveRoom({ phase:"vote", deck: buildDeck(R.mode||"sus", R.level||"soft", R.rounds||20), i:0, result:null, game: Date.now(), votes:null,
     scores: Object.fromEntries(pids().map(id => [id, 0])), names: namesMap() });
 });
@@ -1655,7 +2079,62 @@ const nextOnline = () => hostDo(() => {
   const R = O.room;
   return R.i >= (R.deck||[]).length-1 ? saveRoom({ phase:"end", result:null }) : saveRoom({ phase:"vote", i:R.i+1, result:null });
 });
-const restartOnline = () => hostDo(() => saveRoom({ phase:"lobby", deck:null, i:0, scores:null, result:null, votes:null }));
+const restartOnline = () => hostDo(() => saveRoom({ phase:"lobby", deck:null, i:0, scores:null, result:null, votes:null, card:null, order:null, lists:null, idx:null }));
+
+/* ---- Action ou vérité en ligne ---- */
+// Le joueur dont c'est le tour, en sautant ceux qui ont quitté la partie.
+function avCurrent(R){
+  const order = (R.order || []).filter(id => O.players[id]);
+  return order.length ? order[R.i % order.length] : null;
+}
+async function avPick(type){
+  if(O.busy) return; O.busy = true;
+  try{
+    const R = O.room;
+    if(R.phase!=="pick") return;
+    const idx = Object.assign({v:0, a:0}, R.idx);
+    const cur = avCurrent(R);
+    const t = fillPlayer(drawAV(R.lists || {}, idx, type), pids().filter(id => id!==cur).map(nameOf));
+    await saveRoom({ phase:"card", card:{ type, t }, idx });
+  }catch(e){ O.err = errMsg(e); renderOnline(); }
+  finally{ O.busy = false; }
+}
+async function avNext(success){
+  if(O.busy) return; O.busy = true;
+  try{
+    const R = O.room, cur = avCurrent(R);
+    const patch = { phase:"pick", card:null };
+    if(success && cur) patch["scores/"+cur] = ((R.scores||{})[cur]||0) + 1;
+    if(R.i >= (R.rounds||20)-1) patch.phase = "end"; else patch.i = R.i + 1;
+    await saveRoom(patch);
+  }catch(e){ O.err = errMsg(e); renderOnline(); }
+  finally{ O.busy = false; }
+}
+function renderAVOnline(R, isHost, top, bindLeave, extra){
+  const n = R.rounds || 20, cur = avCurrent(R), mine = cur===O.me, curName = cur ? nameOf(cur) : "…";
+  const head = `${top(`Tour ${R.i+1} / ${n}`)}<div class="bar" aria-hidden="true"><i style="width:${R.i/n*100}%"></i></div>`;
+  const scores = avScoresHtml(pids().map(id => [nameOf(id) + (id===O.me ? " (toi)" : ""), (R.scores||{})[id]||0]));
+  let body;
+  if(R.phase==="card" && R.card){
+    body = `${avCardHtml(R.card, curName, R.level||"soft")}
+      ${mine ? `<p class="instr">Relève le défi, puis dis honnêtement si c'est fait.</p>
+        <div class="actions"><button class="btn ghost" id="avNo">Refusé</button><button class="btn accent" id="avYes">${R.card.type==="v" ? "J'ai répondu" : "Défi relevé"} · +1</button></div>`
+      : `<p class="instr">${esc(curName)} doit ${R.card.type==="v" ? "répondre" : "relever le défi"}.</p>
+        ${isHost ? `<div class="actions"><button class="btn ghost" id="avSkip">Passer son tour</button></div>` : ""}`}`;
+  } else {
+    body = `${avTurnHtml(curName, mine)}
+      ${mine ? `<p class="instr">Action ou vérité ?</p>
+        <div class="yesno"><button class="pbtn" data-avpick="v">Vérité</button><button class="pbtn" data-avpick="a">Action</button></div>`
+      : `<p class="instr">${esc(curName)} choisit : action ou vérité ?</p>`}
+      ${isHost && !mine ? `<div class="actions"><button class="btn ghost" id="avSkip">Passer son tour</button></div>` : ""}`;
+  }
+  app.innerHTML = head + body + scores + extra;
+  bindLeave();
+  app.querySelectorAll("[data-avpick]").forEach(b => b.onclick = () => avPick(b.dataset.avpick));
+  const y = document.getElementById("avYes"); if(y) y.onclick = () => avNext(true);
+  const no = document.getElementById("avNo"); if(no) no.onclick = () => avNext(false);
+  const sk = document.getElementById("avSkip"); if(sk) sk.onclick = () => avNext(false);
+}
 async function castVote(payload){
   if(O.busy) return; O.busy = true;
   try{ await O.db.ref(`rooms/${O.code}/votes/${O.me}`).set(Object.assign({ round:O.room.i, game:O.room.game }, payload)); }
@@ -1720,6 +2199,7 @@ function renderOnline(){
             <div class="seg" role="group" aria-label="Mode">
               <button type="button" data-omode="sus" aria-pressed="${R.mode==="sus"}" ${dis}>Plus susceptible</button>
               <button type="button" data-omode="deja" aria-pressed="${R.mode==="deja"}" ${dis}>Qui a déjà</button>
+              <button type="button" data-omode="av" aria-pressed="${R.mode==="av"}" ${dis}>Action ou vérité</button>
             </div></div>
           <div class="opt"><span class="label">Questions</span>
             <div class="seg" role="group" aria-label="Nombre de questions">
@@ -1752,10 +2232,11 @@ function renderOnline(){
     const winners = ranked.filter(r => r[1]===topScore && topScore>0).map(r => nameOf(r[0]));
     const crown = !winners.length ? "Personne n'a marqué. Suspect."
       : R.mode==="sus" ? `${winners.map(esc).join(" et ")} ${winners.length>1 ? "sont" : "est"} officiellement le plus susceptible de tout.`
+      : R.mode==="av" ? `${winners.map(esc).join(" et ")} ${winners.length>1 ? "ont" : "a"} relevé le plus de défis.`
       : `${winners.map(esc).join(" et ")} ${winners.length>1 ? "ont" : "a"} le passé le plus chargé du groupe.`;
     let rank = 0, prev = null;
     app.innerHTML = `
-      ${top(M.name + " · " + R.deck.length + " questions")}
+      ${top(M.name + " · " + (R.mode==="av" ? (R.rounds||20) + " tours" : (R.deck||[]).length + " questions"))}
       <h1 style="font-size:clamp(36px,10vw,56px);font-weight:800;letter-spacing:-.02em">${M.endTitle}</h1>
       <p class="crown">${crown}</p>
       <div class="podium">
@@ -1768,6 +2249,8 @@ function renderOnline(){
     if(isHost) document.getElementById("again").onclick = restartOnline;
     return;
   }
+
+  if(R.mode==="av") return renderAVOnline(R, isHost, top, bindLeave, stale + errHtml);
 
   const card = R.deck[R.i] || { t:"…" };
   const pct = (R.i / R.deck.length) * 100;
