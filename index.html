@@ -164,6 +164,52 @@ textarea{width:100%;min-height:96px;background:var(--night);border:1px solid var
 .voted span.ok{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .seg button:disabled{cursor:default}
 
+/* ---------- Grand écran (PC) : la page s'étale en largeur ---------- */
+@media (min-width:900px){
+  body{padding-block:32px 56px}
+  .wrap{max-width:1180px}
+  .brand h1{font-size:clamp(76px,7.5vw,108px)}
+  .brand p{font-size:18px;max-width:52ch}
+
+  /* Accueil : joueurs et réglages côte à côte, les 3 jeux sur une ligne */
+  #app[data-screen="home"]{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px 28px;align-items:start}
+  #app[data-screen="home"] > .brand,
+  #app[data-screen="home"] > .online-cta,
+  #app[data-screen="home"] > .label,
+  #app[data-screen="home"] > .modes{grid-column:1/-1}
+  #app[data-screen="home"] .online-cta{padding:24px 28px}
+  #app[data-screen="home"] .online-cta h2{font-size:30px}
+  #app[data-screen="home"] .modes{grid-template-columns:repeat(3,minmax(0,1fr));gap:18px}
+  #app[data-screen="home"] .mode{min-height:240px;padding:24px}
+  #app[data-screen="home"] .mode h2{font-size:32px}
+  #app[data-screen="home"] .mode p{font-size:15px}
+
+  /* En jeu : la carte à gauche (elle reste visible), les boutons et résultats à droite */
+  #app:has(> .card){display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,1fr);gap:20px 40px;align-items:start}
+  #app:has(> .card) > *{grid-column:2}
+  #app:has(> .card) > .topbar,
+  #app:has(> .card) > .bar{grid-column:1/-1}
+  #app:has(> .card) > .card{grid-column:1;grid-row:3 / span 30;position:sticky;top:28px;min-height:440px;padding:40px 36px}
+  #app:has(> .card) > .instr{text-align:left}
+  #app:has(> .card) .result{align-items:flex-start;text-align:left}
+  #app:has(> .card) .voted{justify-content:flex-start}
+  .card .lead{font-size:22px}
+  .card .q{font-size:clamp(38px,3.8vw,58px)}
+  .players{grid-template-columns:repeat(auto-fill,minmax(150px,1fr))}
+  .pbtn{padding:18px 14px}
+
+  /* Salle d'attente en ligne : code et joueurs côte à côte */
+  #app[data-screen="online"]:not(:has(> .card)){display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:24px 28px;align-items:stretch}
+  #app[data-screen="online"]:not(:has(> .card)) > *{grid-column:1/-1}
+  #app[data-screen="online"]:not(:has(> .card)) > section.panel:nth-of-type(1){grid-column:1;justify-content:center}
+  #app[data-screen="online"]:not(:has(> .card)) > section.panel:nth-of-type(2){grid-column:2}
+
+  /* Écrans de classement et d'entrée en ligne : colonne centrée, plus large qu'avant */
+  #app[data-screen="end"],
+  #app[data-screen="online"]:has(> .podium):not(:has(> .card)),
+  #app[data-screen="online-entry"]{display:flex;max-width:820px}
+}
+
 @media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
 </style>
 </head>
@@ -2154,6 +2200,7 @@ async function leaveRoom(){
 }
 
 function renderOnline(){
+  app.dataset.screen = "online";
   const R = O.room;
   const errHtml = O.err ? `<p class="err">${esc(O.err)}</p>` : "";
   const top = right => `<div class="topbar"><button class="btn ghost" id="leave">Quitter</button><span class="progress">${right}</span></div>`;
@@ -2320,6 +2367,7 @@ function renderOnline(){
 }
 
 function render(){
+  app.dataset.screen = S.screen;
   if(S.screen==="home") renderHome();
   else if(S.screen==="play") renderPlay();
   else if(S.screen==="online-entry") renderOnlineEntry();
