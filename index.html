@@ -149,10 +149,13 @@ textarea{width:100%;min-height:96px;background:var(--night);border:1px solid var
 .yesno{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .yesno .pbtn{font-size:20px;padding:22px 12px}
 .tally{display:flex;flex-direction:column;gap:10px}
-.trow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:4px 10px;align-items:center;font-weight:700}
-.trow .tb{grid-column:1/-1;height:10px;border-radius:99px;background:var(--line);overflow:hidden}
-.trow .tb i{display:block;height:100%;background:var(--accent)}
+.trow{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:6px 10px;align-items:center;font-weight:700}
+.trow .who{min-width:0;overflow-wrap:anywhere}
+.trow .tb{grid-column:1/-1;height:16px;border-radius:99px;background:var(--night);border:1px solid var(--line);overflow:hidden}
+.trow .tb i{display:block;height:100%;border-radius:99px;background:var(--muted);transition:width .5s ease}
 .trow .n{font-variant-numeric:tabular-nums;color:var(--muted)}
+.trow.win .who,.trow.win .n{color:var(--accent)}
+.trow.win .tb i{background:var(--accent)}
 .voted{display:flex;flex-wrap:wrap;gap:6px;justify-content:center}
 .voted span{font-size:13px;padding:4px 10px;border-radius:99px;border:1px solid var(--line);color:var(--muted)}
 .voted span.ok{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
@@ -1087,24 +1090,128 @@ acheté de la lingerie juste pour un soir
 `
 };
 const LEVELS = [["soft","Tranquille"],["mod","Modéré"],["hard","Hard"]];
-function poolFor(mode, level, n){
-  const tiers = level==="hard" ? ["hard","spicy","soft"] : level==="mod" ? ["spicy","soft"] : ["soft"];
-  let out = [];
-  tiers.forEach((k, idx) => {
-    const lvl = k==="hard" ? "hard" : k==="spicy" ? "mod" : undefined;
-    const items = shuffle(Q[mode][k]).map(t => lvl ? {t, lvl} : {t});
-    out = out.concat(idx===0 ? items : items.slice(0, Math.max(0, n - out.length)));
-  });
-  return out;
-}
-const L = s => [...new Set(s.trim().split("\n").map(x => x.trim()).filter(Boolean))];
-const Q = {
-  sus:  { soft: L(RAW.sus_soft),  spicy: L(RAW.sus_spicy + "\n" + RAW2.sus_mod), hard: L(RAW2.sus_hard) },
-  deja: { soft: L(RAW.deja_soft), spicy: L(RAW.deja_spicy + "\n" + RAW2.deja_mod), hard: L(RAW2.deja_hard) }
+const RAW3 = {
+sus_hard: `
+faire un plan à trois
+avoir couché avec plus de monde que tout le groupe réuni
+envoyer un nude dès le premier rendez-vous
+avoir un fantasme sur quelqu'un de ce groupe
+avoir un fantasme sur les uniformes
+faire l'amour fenêtre ouverte en sachant que les voisins entendent
+tester le tantrisme
+faire un massage qui finit au lit
+coucher avec quelqu'un rencontré à un mariage
+coucher avec un témoin de mariage
+coucher avec son ou sa colocataire
+avoir une liste de fantasmes écrite quelque part
+réaliser un fantasme pendant les vacances
+demander une fessée
+aimer qu'on lui tire les cheveux
+offrir de la lingerie à son ou sa partenaire
+porter de la lingerie sous ses vêtements de travail
+avoir un safe word
+se faire surprendre par son ou sa colocataire
+faire l'amour déguisé pour Halloween
+coucher avec quelqu'un de célèbre
+coucher avec le DJ après son set
+coucher avec quelqu'un dans une tente de festival
+faire l'amour dans un sauna
+faire l'amour sous la douche chez quelqu'un d'autre
+faire l'amour chez ses beaux-parents
+faire l'amour dans la chambre de l'hôte pendant une soirée
+avoir un fétichisme qu'il n'a jamais avoué
+coucher avec quelqu'un sans retirer ses chaussettes
+recoucher avec le même ex plus de dix fois après la rupture
+avoir un compte secret sur une appli coquine
+faire du sexe au téléphone
+avoir un sextoy connecté
+tester un club BDSM
+être dominant au lit
+être soumis au lit
+faire l'amour sur un parking
+recevoir un cadeau coquin de la part de ses amis
+avoir deux partenaires différents le même week-end
+faire l'amour devant un miroir
+regarder un film X en entier sans avancer
+acheter un sextoy en magasin sans aucune gêne
+`,
+deja_hard: `
+fait l'amour dans un sauna
+fait l'amour sous la douche chez quelqu'un d'autre
+fait l'amour chez ses beaux-parents
+fait l'amour dans la chambre de l'hôte pendant une soirée
+couché avec quelqu'un rencontré à un mariage
+couché avec quelqu'un dans une tente de festival
+couché avec quelqu'un de célèbre
+couché avec son ou sa colocataire
+eu un fantasme sur quelqu'un de ce groupe
+réalisé un fantasme pendant les vacances
+demandé une fessée
+utilisé un safe word
+offert de la lingerie
+porté de la lingerie sous ses vêtements de travail
+été surpris par son ou sa colocataire
+fait l'amour déguisé pour Halloween
+eu un fétichisme qu'il n'a jamais avoué
+couché avec quelqu'un sans retirer ses chaussettes
+recouché avec le même ex plus de dix fois après la rupture
+eu un compte sur une appli coquine
+fait du sexe au téléphone
+utilisé un sextoy connecté
+été dans un club BDSM
+joué le rôle du dominant
+joué le rôle du soumis
+fait l'amour sur un parking
+reçu un cadeau coquin de la part de ses amis
+eu deux partenaires différents le même week-end
+envoyé un nude dès le premier rendez-vous
+fait un massage qui a fini au lit
+testé le tantrisme
+fait l'amour fenêtre ouverte en sachant que les voisins entendaient
+couché avec un témoin de mariage
+fait l'amour alors que quelqu'un attendait derrière la porte
+couché avec quelqu'un rencontré à un afterwork
+été surpris par le personnel d'un hôtel
+fait un plan à trois avec un couple
+fait l'amour dans la mer
+fait l'amour devant un miroir
+regardé un film X en entier sans avancer
+acheté un sextoy en magasin sans aucune gêne
+envoyé une photo osée
+`
 };
+// Questions retirées car en double (ou presque) avec une autre question.
+const DROP = new Set([
+  "avoir un plan à trois", "faire un strip-tease en soirée", "sortir avec deux personnes en même temps", "être infidèle",
+  "fait un plan à trois", "fait un strip-tease", "envoyé une photo osée@spicy", "été avec quelqu'un de plus de 15 ans d'écart",
+  "rêvé de quelqu'un de ce groupe", "dormi chez quelqu'un dont il ne connaissait pas le nom", "été infidèle",
+  "eu une relation purement physique pendant plus de 6 mois"
+]);
+const L = (s, tier) => [...new Set(s.trim().split("\n").map(x => x.trim()).filter(Boolean))].filter(t => !DROP.has(t) && !DROP.has(t+"@"+tier));
+const Q = {
+  sus:  { soft: L(RAW.sus_soft, "soft"),  spicy: L(RAW.sus_spicy + "\n" + RAW2.sus_mod, "spicy"), hard: L(RAW2.sus_hard + "\n" + RAW3.sus_hard, "hard") },
+  deja: { soft: L(RAW.deja_soft, "soft"), spicy: L(RAW.deja_spicy + "\n" + RAW2.deja_mod, "spicy"), hard: L(RAW2.deja_hard + "\n" + RAW3.deja_hard, "hard") }
+};
+// Un niveau ne pioche que dans ses propres questions. Les questions pas encore posées passent d'abord,
+// puis celles posées il y a le plus longtemps (mémorisées dans ce navigateur).
+function poolFor(mode, level){
+  const k = level==="hard" ? "hard" : level==="mod" ? "spicy" : "soft";
+  const lvl = level==="hard" || level==="mod" ? level : undefined;
+  const seen = store.get("seen_"+mode, []);
+  const rank = new Map(seen.map((t,i) => [t,i]));
+  const list = Q[mode][k];
+  const fresh = shuffle(list.filter(t => !rank.has(t)));
+  const old = list.filter(t => rank.has(t)).sort((a,b) => rank.get(a)-rank.get(b));
+  return fresh.concat(old).map(t => lvl ? {t, lvl} : {t});
+}
+function markSeen(mode, deck){
+  const used = new Set(deck.filter(d => !d.own).map(d => d.t));
+  const seen = store.get("seen_"+mode, []).filter(t => !used.has(t)).concat([...used]);
+  store.set("seen_"+mode, seen.slice(-3000));
+}
 const MODES = {
   sus: {name:"Le plus susceptible", lead:"Qui est le plus susceptible de…", accent:"var(--sus)", ink:"var(--sus-ink)",
-        instr:"Comptez jusqu'à 3, tout le monde pointe quelqu'un du doigt, puis touchez celui qui a le plus de votes.",
+        instr:"Comptez jusqu'à 3, tout le monde pointe quelqu'un du doigt. Touchez chaque joueur une fois par doigt pointé sur lui, puis validez.",
         endTitle:"Le classement des suspects"},
   deja: {name:"Qui a déjà", lead:"Qui a déjà…", accent:"var(--deja)", ink:"var(--deja-ink)",
          instr:"Touchez tous ceux qui l'ont déjà fait. Pas de mensonges.",
@@ -1219,9 +1326,9 @@ function renderHome(){
 function startGame(mode){
   const own = S.custom[mode].split("\n").map(s=>s.trim().replace(/^(qui est le plus susceptible de|qui a déjà)\s*/i,"").replace(/\s*\?$/,"")).filter(Boolean)
     .map(t=>({t, own:true}));
-  let pool = poolFor(mode, S.level, S.rounds);
-  const deck = own.concat(shuffle(pool)).slice(0, Math.max(S.rounds, own.length));
-  S.game = { mode, deck: shuffle(deck).slice(0, S.rounds), i:0, scores:Object.fromEntries(S.players.map(p=>[p,0])), picked:new Set(), revealed:null };
+  const deck = shuffle(own.concat(poolFor(mode, S.level)).slice(0, Math.max(S.rounds, own.length))).slice(0, S.rounds);
+  markSeen(mode, deck);
+  S.game = { mode, deck, i:0, scores:Object.fromEntries(S.players.map(p=>[p,0])), picked:new Set(), counts:{}, revealed:null };
   setAccent(mode);
   S.screen="play"; render();
 }
@@ -1251,11 +1358,18 @@ function renderPlay(){
       <p class="instr">${M.instr}</p>
       ${g.mode==="sus" ? `<div class="actions"><button class="btn ghost" id="count">Lancer le 3, 2, 1</button></div>` : ""}
       <div class="players">
-        ${S.players.map(p=>`<button class="pbtn" data-p="${esc(p)}" aria-pressed="${g.picked.has(p)}">${esc(p)}<small>${g.scores[p]} pt${g.scores[p]>1?"s":""}</small></button>`).join("")}
+        ${S.players.map(p=>{
+          const c = g.counts[p] || 0;
+          const on = g.mode==="sus" ? c>0 : g.picked.has(p);
+          const sub = g.mode==="sus" && c>0 ? `${c} vote${c>1?"s":""}` : `${g.scores[p]} pt${g.scores[p]>1?"s":""}`;
+          return `<button class="pbtn" data-p="${esc(p)}" aria-pressed="${on}">${esc(p)}<small>${sub}</small></button>`;
+        }).join("")}
       </div>
       <div class="actions">
         <button class="btn ghost" id="skip">Passer</button>
         ${g.mode==="deja" ? `<button class="btn accent" id="validate">${g.picked.size ? `Valider (${g.picked.size})` : "Personne"}</button>` : ""}
+        ${g.mode==="sus" && totalVotes(g) ? `<button class="btn ghost" id="resetVotes">Remettre à zéro</button>` : ""}
+        ${g.mode==="sus" ? `<button class="btn accent" id="validate" ${totalVotes(g) ? "" : "disabled"}>Valider (${totalVotes(g)} vote${totalVotes(g)>1?"s":""})</button>` : ""}
       </div>
     `}
   `;
@@ -1264,12 +1378,24 @@ function renderPlay(){
 
   app.querySelectorAll("[data-p]").forEach(b=>b.onclick=()=>{
     const p = b.dataset.p;
-    if(g.mode==="sus"){ g.scores[p]++; g.revealed={who:[p]}; renderPlay(); }
+    if(g.mode==="sus"){ g.counts[p] = (g.counts[p]||0) + 1; renderPlay(); }
     else { g.picked.has(p) ? g.picked.delete(p) : g.picked.add(p); renderPlay(); }
   });
   document.getElementById("skip").onclick = next;
+  const rv = document.getElementById("resetVotes");
+  if(rv) rv.onclick = () => { g.counts = {}; renderPlay(); };
   const v = document.getElementById("validate");
-  if(v) v.onclick = () => { const who=[...g.picked]; who.forEach(p=>g.scores[p]++); g.revealed={who}; renderPlay(); };
+  if(v) v.onclick = () => {
+    if(g.mode==="sus"){
+      const max = Math.max(0, ...Object.values(g.counts));
+      const who = S.players.filter(p => max>0 && g.counts[p]===max);
+      who.forEach(p => g.scores[p]++);
+      g.revealed = { who, tally: Object.assign({}, g.counts) };
+    } else {
+      const who=[...g.picked]; who.forEach(p=>g.scores[p]++); g.revealed={who};
+    }
+    renderPlay();
+  };
   const c = document.getElementById("count");
   if(c) c.onclick = countdown;
 }
@@ -1277,19 +1403,38 @@ function renderPlay(){
 function renderReveal(r){
   const g = S.game;
   let big, sub;
-  if(g.mode==="sus"){ big = esc(r.who[0]); sub = "a été désigné par le groupe. +1 point."; }
+  let bars = "";
+  if(g.mode==="sus"){
+    big = r.who.map(esc).join(", ");
+    sub = r.who.length>1 ? "Égalité ! +1 point chacun." : "a reçu le plus de votes. +1 point.";
+    bars = tallyHtml(r.tally || {}, r.who, p => p);
+  }
   else if(!r.who.length){ big = "Personne"; sub = "Des anges, ou des menteurs."; }
   else if(r.who.length===S.players.length){ big = "Tout le monde"; sub = "Personne n'est innocent ici. +1 pour chacun."; }
   else { big = r.who.map(esc).join(", "); sub = r.who.length>1 ? "l'ont déjà fait. +1 point chacun." : "l'a déjà fait. +1 point."; }
   const last = g.i === g.deck.length-1;
   return `
     <div class="result"><div class="big">${big}</div><p class="instr">${sub}</p></div>
+    ${bars}
     <div class="actions"><button class="btn accent" id="next">${last ? "Voir le classement" : "Question suivante"}</button></div>`;
+}
+
+const totalVotes = g => Object.values(g.counts || {}).reduce((a,b) => a+b, 0);
+// Une barre par personne ayant reçu au moins un vote, de la plus votée à la moins votée.
+function tallyHtml(tally, winners, label){
+  const rows = Object.entries(tally).filter(([,n]) => n>0).sort((a,b) => b[1]-a[1]);
+  if(!rows.length) return `<div class="panel tally"><p class="hint">Personne n'a voté.</p></div>`;
+  const max = rows[0][1];
+  return `<div class="panel tally">${rows.map(([k,n]) => `
+    <div class="trow ${winners.includes(k) ? "win" : ""}">
+      <span class="who">${esc(label(k))}</span><span class="n">${n} vote${n>1 ? "s" : ""}</span>
+      <span class="tb"><i style="width:${Math.round(n/max*100)}%"></i></span>
+    </div>`).join("")}</div>`;
 }
 
 function next(){
   const g = S.game;
-  g.revealed = null; g.picked = new Set();
+  g.revealed = null; g.picked = new Set(); g.counts = {};
   if(g.i >= g.deck.length-1){ S.screen="end"; } else { g.i++; }
   render();
 }
@@ -1361,8 +1506,9 @@ function errMsg(e){
 }
 function buildDeck(mode, spicy, rounds){
   const own = (S.custom[mode]||"").split("\n").map(s=>s.trim().replace(/^(qui est le plus susceptible de|qui a déjà)\s*/i,"").replace(/\s*\?$/,"")).filter(Boolean).map(t=>({t, own:true}));
-  let pool = poolFor(mode, spicy, rounds);
-  return shuffle(own.concat(shuffle(pool)).slice(0, Math.max(rounds, own.length))).slice(0, rounds);
+  const deck = shuffle(own.concat(poolFor(mode, spicy)).slice(0, Math.max(rounds, own.length))).slice(0, rounds);
+  markSeen(mode, deck);
+  return deck;
 }
 const pids = () => Object.keys(O.players).sort((a,b)=>(O.players[a].joinedAt||0)-(O.players[b].joinedAt||0));
 const nameOf = id => (O.players[id] && O.players[id].name) || (O.room && O.room.names && O.room.names[id]) || "Joueur parti";
@@ -1665,14 +1811,10 @@ function renderOnline(){
   let body;
   if(R.mode==="sus"){
     const w = res.winners || [];
-    const rows = Object.entries(res.tally || {}).sort((a,b) => b[1]-a[1]);
-    const total = res.voters || 1;
     body = `
       <div class="result"><div class="big">${w.length ? w.map(id => esc(nameOf(id))).join(", ") : "Personne"}</div>
-        <p class="instr">${w.length ? (w.length>1 ? "Égalité ! +1 point chacun." : "a été désigné par le groupe. +1 point.") : "Aucun vote."}</p></div>
-      <div class="panel tally">
-        ${rows.map(([id,n]) => `<div class="trow"><span>${esc(nameOf(id))}</span><span class="n">${n} vote${n>1 ? "s" : ""}</span><span class="tb"><i style="width:${Math.round(n/total*100)}%"></i></span></div>`).join("") || `<p class="hint">Personne n'a voté.</p>`}
-      </div>`;
+        <p class="instr">${w.length ? (w.length>1 ? "Égalité ! +1 point chacun." : "a reçu le plus de votes. +1 point.") : "Aucun vote."}</p></div>
+      ${tallyHtml(res.tally || {}, w, nameOf)}`;
   } else {
     const yes = res.yes || [], no = res.no || [];
     body = `
